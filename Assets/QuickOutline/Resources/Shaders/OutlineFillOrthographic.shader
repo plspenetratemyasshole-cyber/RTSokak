@@ -65,15 +65,26 @@ Shader "Custom/Outline Fill Orthographic"
 
                 // unity_OrthoParams.w: 1.0 = orthographic camera, 0.0 = perspective camera
                 float isOrtho = unity_OrthoParams.w;
-                float dist = isOrtho ? 1.0 : max(1.0, -viewPos.z);
-
-                // Projection scale:
-                float projY = max(0.001, UNITY_MATRIX_P[1][1]);
                 float screenH = _ScreenParams.y > 0.0 ? _ScreenParams.y : 1080.0;
-                float unitsPerPixel = (dist * 2.0) / (projY * screenH);
+                float projY = max(0.0001, abs(UNITY_MATRIX_P[1][1]));
 
-                // Thin, crisp, elegant outline (1.2 - 2.2 screen pixels)
-                float targetPixels = clamp(_OutlineWidth * 0.75, 1.0, 2.5);
+                float unitsPerPixel;
+                if (isOrtho > 0.5)
+                {
+                    // For orthographic camera, unity_OrthoParams.y is the camera's world height (2 * orthoSize).
+                    // Fallback to 2.0 / projY if unity_OrthoParams.y is zero.
+                    float orthoHeight = unity_OrthoParams.y > 0.0 ? unity_OrthoParams.y : (2.0 / projY);
+                    unitsPerPixel = orthoHeight / screenH;
+                }
+                else
+                {
+                    // For perspective camera, visible height at depth -viewPos.z is 2.0 * dist / projY.
+                    float dist = max(0.1, -viewPos.z);
+                    unitsPerPixel = (dist * 2.0) / (projY * screenH);
+                }
+
+                // Clear, visible outline in screen pixels (clamped to prevent bloated outlines)
+                float targetPixels = clamp(_OutlineWidth * 1.5, 1.5, 5.0);
                 float extrusion = targetPixels * unitsPerPixel;
 
                 // 3D extrusion in view space preserves full volume: top, bottom, and sides expand uniformly

@@ -62,7 +62,7 @@ namespace RTSokak.Network
         [SerializeField] protected float acceleration = 8f;
 
         [Header("Path Line")]
-        [SerializeField] protected float outlineWidth = 1.8f;
+        [SerializeField] protected float outlineWidth = 2f;
         [SerializeField] protected float pathLineWidth = 0.3f;
         [SerializeField] protected float lineHeight = 0.1f;
         [SerializeField] protected Color pathLineColor = Color.green;

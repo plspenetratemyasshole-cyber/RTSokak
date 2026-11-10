@@ -913,7 +913,7 @@ namespace RTSokak.Editor
             if (maxInv != null) maxInv.intValue = 500;
             
             // Visual Settings
-            serializedWorker.FindProperty("outlineWidth").floatValue = 2.5f;
+            serializedWorker.FindProperty("outlineWidth").floatValue = 2f;
             serializedWorker.FindProperty("pathLineWidth").floatValue = 0.3f;
             serializedWorker.FindProperty("lineHeight").floatValue = 0.1f;
             serializedWorker.FindProperty("pathLineColor").colorValue = Color.green;
@@ -930,7 +930,7 @@ namespace RTSokak.Editor
                 "Updated values:\n" +
                 "• Stopping Distance: 2.5\n" +
                 "• Harvest Tolerance: 6.0 (увеличено!)\n" +
-                "• Outline Width: 2.5\n" +
+                "• Outline Width: 2.0\n" +
                 "• Path Line Width: 0.3\n\n" +
                 "Worker будет останавливаться\n" +
                 "на расстоянии от ресурсов!",

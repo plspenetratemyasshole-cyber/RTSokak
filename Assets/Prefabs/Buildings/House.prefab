@@ -99,7 +99,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  outlineWidth: 2.5
+  outlineWidth: 2
   startingMaxHealth: 1000
   enemyOutlineColor: {r: 1, g: 0.08, b: 0.08, a: 1}
 --- !u!114 &7042334601714438327

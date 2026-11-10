@@ -12,7 +12,7 @@ namespace RTSokak.Buildings
     {
         [SyncVar]
         private BuildingType buildingType;
-        [SerializeField] private float outlineWidth = 1.8f;
+        [SerializeField] private float outlineWidth = 2f;
 
         [SyncVar(hook = nameof(OnOwnerConnectionIdChanged))]
         private int ownerConnectionId = -1;
