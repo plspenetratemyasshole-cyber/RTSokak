@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0ba8f03997266014e89ee11d109d91f0
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/HDRP/DLSS/TND.Upscaling.HDRP.DLSS.asmdef
+  uploadId: 952742

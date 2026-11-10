@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 63ec404fd9d05d64aa2f2ae0ddcbe46f
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Editor/BIRP/TND.Upscaling.Framework.Editor.BIRP.asmdef
+  uploadId: 952742

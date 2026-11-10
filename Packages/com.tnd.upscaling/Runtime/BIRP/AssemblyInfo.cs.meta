@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: cf09a08e095f4c79b98cfa07e1b76760
+timeCreated: 1753971059
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/BIRP/AssemblyInfo.cs
+  uploadId: 952742

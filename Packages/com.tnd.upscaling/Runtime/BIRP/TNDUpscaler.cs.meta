@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 77b1e3f289d79054a8cb9d214b4809e2
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/BIRP/TNDUpscaler.cs
+  uploadId: 952742

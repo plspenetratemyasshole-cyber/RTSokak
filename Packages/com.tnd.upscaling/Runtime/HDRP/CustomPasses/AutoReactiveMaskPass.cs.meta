@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 1f4ba208b9e5406498fed93cfeac6ba1
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/HDRP/CustomPasses/AutoReactiveMaskPass.cs
+  uploadId: 952742

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 198dfac62bd98e443b60141d551bcb7b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Art/Sponza/Materials URP/MetalAniso.mat
+  uploadId: 952742

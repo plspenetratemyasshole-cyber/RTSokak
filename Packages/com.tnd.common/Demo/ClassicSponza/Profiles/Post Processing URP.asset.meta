@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0eed97927f581aa48a339986cc170f8e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Profiles/Post Processing
+    URP.asset
+  uploadId: 952742

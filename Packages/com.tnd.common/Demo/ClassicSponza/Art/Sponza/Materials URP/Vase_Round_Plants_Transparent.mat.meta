@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6651c502af4b194488a6a571152e4c10
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Art/Sponza/Materials URP/Vase_Round_Plants_Transparent.mat
+  uploadId: 952742

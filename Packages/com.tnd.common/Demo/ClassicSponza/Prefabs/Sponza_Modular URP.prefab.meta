@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a82664c7d3571874a9bc6f78146b5084
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Prefabs/Sponza_Modular URP.prefab
+  uploadId: 952742

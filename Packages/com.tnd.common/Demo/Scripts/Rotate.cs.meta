@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8c6a8408d596cb4438bac7dce7c0992a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/Scripts/Rotate.cs
+  uploadId: 952742

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f65f98cd822cbe74aafbe7d5474b33ac
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/HDRP/NVModule/TND.Upscaling.HDRP.NVModule.asmdef
+  uploadId: 952742

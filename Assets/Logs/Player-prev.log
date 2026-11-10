@@ -1,0 +1,702 @@
+Mono path[0] = 'C:/Users/Andrey/Desktop/RTSokak/okak/RTSokak_Data/Managed'
+Mono config path = 'C:/Users/Andrey/Desktop/RTSokak/okak/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.0.48f1 (170d2541580d)
+[Subsystems] Discovering subsystems at path C:/Users/Andrey/Desktop/RTSokak/okak/RTSokak_Data/UnitySubsystems
+kGfxThreadingModeSplitJobs is not supported on Direct3D 11. Reverting to kGfxThreadingModeClientWorkerJobs instead.
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 4070 (ID=0x2786)
+    Vendor:   NVIDIA
+    VRAM:     12010 MB
+    Driver:   32.0.16.1088
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.096 seconds
+- Finished resetting the current domain, in  0.001 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+Using Windows.Gaming.Input
+<RI> Input initialized.
+<RI> Initialized touch support.
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.393700 ms
+ThreadLog initialized.
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] LAN server button clicked: RTS Server at 172.18.0.1:7778
+[MainMenu] Calling StartLanClient with uri: kcp://172.18.0.1:7778/
+[RTSNetworkManager] StartLanClient: Connecting to 172.18.0.1:7778
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+[RTSNetworkManager] StartLanClient: Calling StartClient(uri)
+Unloading 6 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 4.149900 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-37.06, 25.00, -38.79), zoom: 14,5
+Unloading 4 unused Assets to reduce memory usage. Loaded Objects now: 2747.
+Total: 1.512300 ms (FindLiveObjects: 0.078600 ms CreateObjectMapping: 0.023900 ms MarkObjects: 1.403200 ms  DeleteObjects: 0.006500 ms)
+
+Not allowed to access vertices on mesh 'building_castle_blue' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access normals on mesh 'building_castle_blue' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access uv4 on mesh 'building_castle_blue' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access vertices on mesh 'default' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access normals on mesh 'default' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access uv4 on mesh 'default' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access triangles/indices on mesh 'default' (isReadable is false; Read/Write must be enabled in import settings)
+Not allowed to access triangles/indices on mesh 'default' (isReadable is false; Read/Write must be enabled in import settings)
+[ProceduralGroundTexture] Generated 128x128 texture with seed 473328387
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO55', email=''
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 3.593000 ms
+Unloading 37 unused Assets to reduce memory usage. Loaded Objects now: 3068.
+Total: 17.974700 ms (FindLiveObjects: 0.079900 ms CreateObjectMapping: 0.029600 ms MarkObjects: 17.591200 ms  DeleteObjects: 0.273400 ms)
+
+[AccountUIController] Sign In button listener added
+[AccountUIController] Sign Out button listener added
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] LAN server button clicked: RTS Server at 172.18.0.1:7778
+[MainMenu] Calling StartLanClient with uri: kcp://172.18.0.1:7778/
+[RTSNetworkManager] StartLanClient: Connecting to 172.18.0.1:7778
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+[RTSNetworkManager] StartLanClient: Calling StartClient(uri)
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.447400 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-37.06, 25.00, -38.79), zoom: 14,5
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 2750.
+Total: 18.870600 ms (FindLiveObjects: 0.116700 ms CreateObjectMapping: 0.025700 ms MarkObjects: 18.717400 ms  DeleteObjects: 0.010400 ms)
+
+[ProceduralGroundTexture] Generated 128x128 texture with seed 473328387
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO52', email=''
+Created tool type 2 at (7.22, 1.08, -18.54)
+Created tool type 2 at (7.12, 1.08, -16.47)
+Created tool type 2 at (11.27, 1.08, -11.11)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.532400 ms
+Unloading 48 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 17.661600 ms (FindLiveObjects: 0.073600 ms CreateObjectMapping: 0.025900 ms MarkObjects: 17.391000 ms  DeleteObjects: 0.170900 ms)
+
+[MainMenu] LAN server button clicked: RTS Server at 172.18.0.1:7778
+[MainMenu] Calling StartLanClient with uri: kcp://172.18.0.1:7778/
+[RTSNetworkManager] StartLanClient: Connecting to 172.18.0.1:7778
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+[RTSNetworkManager] StartLanClient: Calling StartClient(uri)
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.468400 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-30.99, 25.00, -46.20), zoom: 14,5
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 2759.
+Total: 18.533400 ms (FindLiveObjects: 0.130700 ms CreateObjectMapping: 0.028000 ms MarkObjects: 18.365400 ms  DeleteObjects: 0.008900 ms)
+
+[ProceduralGroundTexture] Generated 128x128 texture with seed 473328387
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO52', email=''
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.323100 ms
+Unloading 46 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 17.753100 ms (FindLiveObjects: 0.071900 ms CreateObjectMapping: 0.028900 ms MarkObjects: 17.514200 ms  DeleteObjects: 0.138000 ms)
+
+[AccountUIController] Sign In button listener added
+[AccountUIController] Sign Out button listener added
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] LAN server button clicked: RTS Server at 172.18.0.1:7778
+[MainMenu] Calling StartLanClient with uri: kcp://172.18.0.1:7778/
+[RTSNetworkManager] StartLanClient: Connecting to 172.18.0.1:7778
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+[RTSNetworkManager] StartLanClient: Calling StartClient(uri)
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.496800 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-33.73, 25.00, -40.16), zoom: 14,5
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 2759.
+Total: 18.408400 ms (FindLiveObjects: 0.106000 ms CreateObjectMapping: 0.039100 ms MarkObjects: 18.250500 ms  DeleteObjects: 0.012200 ms)
+
+[ProceduralGroundTexture] Generated 128x128 texture with seed 1633110789
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO52', email=''
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.459600 ms
+Unloading 46 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 19.198600 ms (FindLiveObjects: 0.109500 ms CreateObjectMapping: 0.032300 ms MarkObjects: 18.908400 ms  DeleteObjects: 0.148100 ms)
+
+[Physics::Module] Cleanup current backned.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     [RTSNetworkManager] AddPlayer idx=1 ip=172.18.0.1 restore=True pendingUnits=3 pendingRes=38348 rm=True workerPrefab=True
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO55', email='', sender.connectionId=-1532152201
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO55'
+[RTSPlayer] Found 2 total players on server
+[RTSPlayer] - Player: nickname='', playerIndex=1, connId=-1532152201, isThis=True
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=False
+[RTSPlayer] FindPlayerByNickname: FOUND match 'ZOPO55'
+[RTSPlayer] Nickname 'ZOPO55' already in use by another player (connId=0)! Disconnecting new client.
+[RTSPlayer] DestroyNewPlayerUnits: destroying units for connectionId=-1532152201
+[RTSPlayer] DestroyNewPlayerUnits: destroyed 0 objects for connectionId=-1532152201
+[RTSNetworkManager] Client disconnected: 172.18.0.1 (connId=-1532152201)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,265 (6:00)
+[WorldSnapshot] Capture: found 2 RTSPlayer objects
+[WorldSnapshot] Saving player 1: wood=100, ore=100, food=0, pop=0/0
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=2, buildings=1, units=3, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=2
+[RTSNetworkManager] Removed client authority from 0 objects for disconnecting player
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[KCP] Server: RawSend invalid connectionId=-1532152201
+[RTSNetworkManager] AddPlayer idx=1 ip=172.18.0.1 restore=True pendingUnits=3 pendingRes=38348 rm=True workerPrefab=True
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO52', email='', sender.connectionId=-1532154328
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO52'
+[RTSPlayer] Found 2 total players on server
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=False
+[RTSPlayer] - Player: nickname='', playerIndex=1, connId=-1532154328, isThis=True
+[RTSPlayer] FindPlayerByNickname: NO match found for 'ZOPO52'
+[RTSPlayer] Player registered as: 'ZOPO52' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO52', hasActiveSaveData=True, shouldRestore=True, playerCount=2
+[RTSPlayer] Found economy for 'ZOPO52': NULL
+[RTSPlayer] ServerRestoreEconomy: wood=100, ore=100, food=0, curPop=0, maxPop=0, hasCapital=False
+[WorldSnapshot] ClaimAndRestore nick='ZOPO52': wood=100, ore=100, food=0, units=0
+[RTSPlayer] No units for nick='ZOPO52' — spawning starters
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[RTSPlayer] Placed Capital at (14.50, 0.00, -17.50) grid=(12, -20) size=(6, 6), worker=Worker(Clone)
+Created tool type 2 at (8.32, 1.08, -18.47)
+Created tool type 2 at (6.83, 1.08, -16.65)
+Created tool type 2 at (11.11, 1.08, -10.97)
+[Building] Capital completed for conn -1532154328
+[RTSNetworkManager] Client disconnected: 172.18.0.1 (connId=-1532154328)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,297 (7:00)
+[WorldSnapshot] Capture: found 2 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Saving player 1: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=2, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=2
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO52', IP=172.18.0.1, playerIndex=1, connId=-1532154328)
+[RTSNetworkManager] AddPlayer idx=1 ip=172.18.0.1 restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO52', email='', sender.connectionId=-1532160782
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO52'
+[RTSPlayer] Found 2 total players on server
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=False
+[RTSPlayer] - Player: nickname='', playerIndex=1, connId=-1532160782, isThis=True
+[RTSPlayer] FindPlayerByNickname: NO match found for 'ZOPO52'
+[RTSPlayer] Player registered as: 'ZOPO52' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO52', hasActiveSaveData=True, shouldRestore=True, playerCount=2
+[RTSPlayer] Found economy for 'ZOPO52': wood=0, ore=0, food=0
+[RTSPlayer] ServerRestoreEconomy: wood=0, ore=0, food=0, curPop=3, maxPop=5, hasCapital=True
+[WorldSnapshot] ClaimAndRestore nick='ZOPO52': wood=0, ore=0, food=0, units=3
+[RTSNetworkManager] Client disconnected: 172.18.0.1 (connId=-1532160782)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,300 (7:00)
+[WorldSnapshot] Capture: found 2 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Saving player 1: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=2, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=2
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO52', IP=172.18.0.1, playerIndex=1, connId=-1532160782)
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,303 (7:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Client disconnected: localhost (connId=0)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,303 (7:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO55', IP=localhost, playerIndex=0, connId=0)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.712900 ms
+Unloading 45 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 9.295900 ms (FindLiveObjects: 0.089000 ms CreateObjectMapping: 0.025200 ms MarkObjects: 9.058100 ms  DeleteObjects: 0.123300 ms)
+
+[MainMenu] Playing world: 'ыапвпавыпаыв'
+[WorldSave] Loaded world from: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSave] Player 0 data: wood=0, ore=0, food=0, pop=3/5
+[WorldSession] Loaded 'ыапвпавыпаыв': res=38348, units=6, buildings=2, players=1, seed=661733761, restore=True
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.506600 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-31.50, 25.00, -45.83), zoom: 14,5
+[RTSNetworkManager] Server listening on port 7778 (KcpTransport).
+[RTSNetworkManager] Game scene ready. restore=True, world=ыапвпавыпаыв, rm=True
+[ProceduralGroundTexture] Generated 128x128 texture with seed 1557880959
+[ResourceManager] Auto-generate skipped (loading save).
+Unloading 4 unused Assets to reduce memory usage. Loaded Objects now: 2761.
+Total: 9.287000 ms (FindLiveObjects: 0.078900 ms CreateObjectMapping: 0.079800 ms MarkObjects: 9.113600 ms  DeleteObjects: 0.014300 ms)
+
+[RTSNetworkManager] AddPlayer idx=0 ip=localhost restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[WorldSnapshot] Restored time of day: 0,250 (6:00)
+[WorldSnapshot] Restored geometry: resources=38348/38348, buildings=2/2, units=6/6
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO52', email=''
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO52', email='', sender.connectionId=0
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO52'
+[RTSPlayer] Found 1 total players on server
+[RTSPlayer] - Player: nickname='ZOPO52', playerIndex=0, connId=0, isThis=True
+[RTSPlayer] FindPlayerByNickname: FOUND match 'ZOPO52'
+[RTSPlayer] Player registered as: 'ZOPO52' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO52', hasActiveSaveData=True, shouldRestore=True, playerCount=1
+[RTSPlayer] Found economy for 'ZOPO52': NULL
+[RTSPlayer] ServerRestoreEconomy: wood=0, ore=0, food=0, curPop=3, maxPop=5, hasCapital=True
+[WorldSnapshot] ClaimAndRestore nick='ZOPO52': wood=0, ore=0, food=0, units=3
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,256 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Client disconnected: localhost (connId=0)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,256 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO52', IP=localhost, playerIndex=0, connId=0)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.392100 ms
+Unloading 45 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 9.190000 ms (FindLiveObjects: 0.077200 ms CreateObjectMapping: 0.026000 ms MarkObjects: 8.962200 ms  DeleteObjects: 0.124300 ms)
+
+[AccountUIController] Sign In button listener added
+[AccountUIController] Sign Out button listener added
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] Playing world: 'ыапвпавыпаыв'
+[WorldSave] Loaded world from: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSave] Player 0 data: wood=0, ore=0, food=0, pop=3/5
+[WorldSession] Loaded 'ыапвпавыпаыв': res=38348, units=6, buildings=2, players=1, seed=661733761, restore=True
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.903700 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-33.73, 25.00, -40.16), zoom: 14,5
+[RTSNetworkManager] Server listening on port 7778 (KcpTransport).
+[RTSNetworkManager] Game scene ready. restore=True, world=ыапвпавыпаыв, rm=True
+[ProceduralGroundTexture] Generated 128x128 texture with seed 1633110789
+[ResourceManager] Auto-generate skipped (loading save).
+Unloading 4 unused Assets to reduce memory usage. Loaded Objects now: 2761.
+Total: 9.125300 ms (FindLiveObjects: 0.066400 ms CreateObjectMapping: 0.022600 ms MarkObjects: 9.021400 ms  DeleteObjects: 0.014700 ms)
+
+[RTSNetworkManager] AddPlayer idx=0 ip=localhost restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[WorldSnapshot] Restored time of day: 0,250 (6:00)
+[WorldSnapshot] Restored geometry: resources=38348/38348, buildings=2/2, units=6/6
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO55', email=''
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO55', email='', sender.connectionId=0
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO55'
+[RTSPlayer] Found 1 total players on server
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=True
+[RTSPlayer] FindPlayerByNickname: FOUND match 'ZOPO55'
+[RTSPlayer] Player registered as: 'ZOPO55' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO55', hasActiveSaveData=True, shouldRestore=True, playerCount=1
+[RTSPlayer] Found economy for 'ZOPO55': NULL
+[RTSPlayer] ServerRestoreEconomy: wood=0, ore=0, food=0, curPop=3, maxPop=5, hasCapital=True
+[WorldSnapshot] ClaimAndRestore nick='ZOPO55': wood=0, ore=0, food=0, units=3
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,261 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] AddPlayer idx=1 ip=172.18.0.1 restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO52', email='', sender.connectionId=-1532155580
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO52'
+[RTSPlayer] Found 2 total players on server
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=False
+[RTSPlayer] - Player: nickname='', playerIndex=1, connId=-1532155580, isThis=True
+[RTSPlayer] FindPlayerByNickname: NO match found for 'ZOPO52'
+[RTSPlayer] Player registered as: 'ZOPO52' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO52', hasActiveSaveData=True, shouldRestore=True, playerCount=1
+[RTSPlayer] Found economy for 'ZOPO52': NULL
+[WorldSnapshot] ClaimAndRestore nick='ZOPO52': no economy in save, units=3
+[Worker] Inventory empty — nothing to deposit
+[RTSNetworkManager] Client disconnected: 172.18.0.1 (connId=-1532155580)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,276 (6:00)
+[WorldSnapshot] Capture: found 2 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Saving player 1: wood=100, ore=100, food=0, pop=3/0
+[WorldSnapshot] Capture complete: players=2, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=2
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO52', IP=172.18.0.1, playerIndex=1, connId=-1532155580)
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,278 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Client disconnected: localhost (connId=0)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,278 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO55', IP=localhost, playerIndex=0, connId=0)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.380400 ms
+Unloading 45 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 9.454500 ms (FindLiveObjects: 0.078600 ms CreateObjectMapping: 0.026800 ms MarkObjects: 9.231500 ms  DeleteObjects: 0.117400 ms)
+
+[AccountUIController] Sign In button listener added
+[AccountUIController] Sign Out button listener added
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] Playing world: 'ыапвпавыпаыв'
+[WorldSave] Loaded world from: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSave] Player 0 data: wood=0, ore=0, food=0, pop=3/5
+[WorldSession] Loaded 'ыапвпавыпаыв': res=38348, units=6, buildings=2, players=1, seed=661733761, restore=True
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.530500 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-33.73, 25.00, -40.16), zoom: 14,5
+[RTSNetworkManager] Server listening on port 7778 (KcpTransport).
+[RTSNetworkManager] Game scene ready. restore=True, world=ыапвпавыпаыв, rm=True
+[ProceduralGroundTexture] Generated 128x128 texture with seed 77647271
+[ResourceManager] Auto-generate skipped (loading save).
+Unloading 4 unused Assets to reduce memory usage. Loaded Objects now: 2761.
+Total: 9.170200 ms (FindLiveObjects: 0.078400 ms CreateObjectMapping: 0.022700 ms MarkObjects: 8.938600 ms  DeleteObjects: 0.130400 ms)
+
+[RTSNetworkManager] AddPlayer idx=0 ip=localhost restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[WorldSnapshot] Restored time of day: 0,250 (6:00)
+[WorldSnapshot] Restored geometry: resources=38348/38348, buildings=2/2, units=6/6
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO55', email=''
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO55', email='', sender.connectionId=0
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO55'
+[RTSPlayer] Found 1 total players on server
+[RTSPlayer] - Player: nickname='ZOPO55', playerIndex=0, connId=0, isThis=True
+[RTSPlayer] FindPlayerByNickname: FOUND match 'ZOPO55'
+[RTSPlayer] Player registered as: 'ZOPO55' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO55', hasActiveSaveData=True, shouldRestore=True, playerCount=1
+[RTSPlayer] Found economy for 'ZOPO55': wood=0, ore=0, food=0
+[RTSPlayer] ServerRestoreEconomy: wood=0, ore=0, food=0, curPop=3, maxPop=5, hasCapital=True
+[WorldSnapshot] ClaimAndRestore nick='ZOPO55': wood=0, ore=0, food=0, units=3
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,254 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Client disconnected: localhost (connId=0)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,254 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO55', IP=localhost, playerIndex=0, connId=0)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.417900 ms
+Unloading 45 unused Assets to reduce memory usage. Loaded Objects now: 3077.
+Total: 9.477500 ms (FindLiveObjects: 0.074400 ms CreateObjectMapping: 0.025400 ms MarkObjects: 9.252300 ms  DeleteObjects: 0.125100 ms)
+
+[AccountUIController] Sign In button listener added
+[AccountUIController] Sign Out button listener added
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[MainMenu] Playing world: 'ыапвпавыпаыв'
+[WorldSave] Loaded world from: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSave] Player 0 data: wood=0, ore=0, food=0, pop=3/5
+[WorldSession] Loaded 'ыапвпавыпаыв': res=38348, units=6, buildings=2, players=1, seed=661733761, restore=True
+[RTSNetworkManager] Removing invalid prefab 'empty' (no NetworkIdentity) from spawnPrefabs at index 8
+[RTSNetworkManager] Cleaned up 1 invalid prefab(s) from spawnPrefabs
+Unloading 5 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.560400 ms
+[QualitySettings] Built-in shadows distance=400, cascades=4, aa=4
+[RTSCamera] Restored camera position: (-26.16, 25.00, -41.87), zoom: 14,5
+[RTSNetworkManager] Server listening on port 7778 (KcpTransport).
+[RTSNetworkManager] Game scene ready. restore=True, world=ыапвпавыпаыв, rm=True
+[ProceduralGroundTexture] Generated 128x128 texture with seed 313811462
+[ResourceManager] Auto-generate skipped (loading save).
+Unloading 4 unused Assets to reduce memory usage. Loaded Objects now: 2761.
+Total: 9.263900 ms (FindLiveObjects: 0.066500 ms CreateObjectMapping: 0.023300 ms MarkObjects: 9.159500 ms  DeleteObjects: 0.014300 ms)
+
+[RTSNetworkManager] AddPlayer idx=0 ip=localhost restore=True pendingUnits=6 pendingRes=38348 rm=True workerPrefab=True
+[WorldSnapshot] Restored time of day: 0,250 (6:00)
+[WorldSnapshot] Restored geometry: resources=38348/38348, buildings=2/2, units=6/6
+[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='ZOPO52', email=''
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[Worker Start] stoppingDistance=2,5, harvestTolerance=2, autoHarvestRadius=50, moveSpeed=7,5
+[RTSPlayer SERVER] CmdRegisterClient called: nickname='ZOPO52', email='', sender.connectionId=0
+[RTSPlayer] FindPlayerByNickname: searching for 'ZOPO52'
+[RTSPlayer] Found 1 total players on server
+[RTSPlayer] - Player: nickname='ZOPO52', playerIndex=0, connId=0, isThis=True
+[RTSPlayer] FindPlayerByNickname: FOUND match 'ZOPO52'
+[RTSPlayer] Player registered as: 'ZOPO52' (email=)
+[RTSPlayer] ServerApplyNicknameOwnership: nickname='ZOPO52', hasActiveSaveData=True, shouldRestore=True, playerCount=1
+[RTSPlayer] Found economy for 'ZOPO52': NULL
+[RTSPlayer] ServerRestoreEconomy: wood=0, ore=0, food=0, curPop=3, maxPop=5, hasCapital=True
+[WorldSnapshot] ClaimAndRestore nick='ZOPO52': wood=0, ore=0, food=0, units=3
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,288 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Client disconnected: localhost (connId=0)
+[RTSNetworkManager] Auto-saving world on disconnect...
+[WorldSnapshot] TrySaveActiveWorld: world='ыапвпавыпаыв'
+[WorldSnapshot] Saving time of day: 0,288 (6:00)
+[WorldSnapshot] Capture: found 1 RTSPlayer objects
+[WorldSnapshot] Saving player 0: wood=0, ore=0, food=0, pop=3/5
+[WorldSnapshot] Capture complete: players=1, buildings=2, units=6, resources=38348
+[WorldSave] Saved world 'ыапвпавыпаыв' to: C:/Users/Andrey/AppData/LocalLow/DefaultCompany/RTSokak\Worlds\ыапвпавыпаыв\world.json
+[WorldSnapshot] ActiveSaveData updated after save: players=1
+[RTSNetworkManager] Removed client authority from 3 objects for disconnecting player
+[RTSNetworkManager] Preserving player object for future reconnection (nickname='ZOPO52', IP=localhost, playerIndex=0, connId=0)
+The referenced script (Unknown) on this Behaviour is missing!
+The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+Unloading 4 Unused Serialized files (Serialized files now loaded: 0)
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::ReleaseCurrentResourceClaim()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveConstruction()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.Worker::LeaveFarming()' called when server was not active
+[Server] function 'System.Void RTSokak.Network.RTSUnit::ServerStopCombat()' called when server was not active
+[Thread4] The referenced script (Unknown) on this Behaviour is missing!
+[Thread4] The referenced script on this Behaviour (Game Object 'Account UI Controller') is missing!
+UnloadTime: 0.380800 ms
+Unloading 34 unused Assets to reduce memory usage. Loaded Objects now: 3088.
+Total: 35.319700 ms (FindLiveObjects: 0.066000 ms CreateObjectMapping: 0.024400 ms MarkObjects: 35.133000 ms  DeleteObjects: 0.096000 ms)
+
+[Physics::Module] Cleanup current backned.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.

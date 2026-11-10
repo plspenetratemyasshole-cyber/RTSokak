@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: b756642d37b54762941a565d4acd5b32
+timeCreated: 1750962680
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Runtime/BIRP/Scripts/ImageEffectUpscaler.cs
+  uploadId: 952742

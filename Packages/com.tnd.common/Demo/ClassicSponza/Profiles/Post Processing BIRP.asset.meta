@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e23276b8a7dd92b4baab0e601a1cfc5b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Profiles/Post Processing
+    BIRP.asset
+  uploadId: 952742

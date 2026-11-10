@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cb47d373859cd1047b874525aa61ef5d
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.upscaling/Demo/HDRP Demo.unity
+  uploadId: 952742

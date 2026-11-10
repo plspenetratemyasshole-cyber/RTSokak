@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c934dab477cf2614798528196851028c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 328076
+  packageName: TND Post Processing Stack V2
+  packageVersion: 3.6.5
+  assetPath: Packages/com.tnd.common/Demo/ClassicSponza/Profiles/Post Processing
+    HDRP.asset
+  uploadId: 952742
