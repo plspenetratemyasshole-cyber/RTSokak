@@ -35,6 +35,8 @@ namespace RTSokak.Resources
         [Header("Grid Position")]
         public Vector2Int gridPosition;
 
+        public static readonly System.Collections.Generic.List<Resource> AllResources = new System.Collections.Generic.List<Resource>();
+
         public ResourceType Type => resourceType;
         public int Amount => resourceAmount;
         public bool IsHarvested { get; private set; }
@@ -45,6 +47,16 @@ namespace RTSokak.Resources
 
         public bool IsClaimed => claimedBy != null;
         public bool IsAvailable => !IsHarvested && claimedBy == null;
+
+        private void OnEnable()
+        {
+            AllResources.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            AllResources.Remove(this);
+        }
 
         private void Awake()
         {

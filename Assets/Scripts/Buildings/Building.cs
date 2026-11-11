@@ -10,6 +10,18 @@ namespace RTSokak.Buildings
     [RequireComponent(typeof(BoxCollider))]
     public class Building : NetworkBehaviour
     {
+        public static readonly List<Building> AllBuildings = new List<Building>();
+
+        protected virtual void OnEnable()
+        {
+            AllBuildings.Add(this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            AllBuildings.Remove(this);
+        }
+
         [SyncVar]
         private BuildingType buildingType;
         [SerializeField] private float outlineWidth = 2f;
@@ -252,24 +264,44 @@ namespace RTSokak.Buildings
             bool hasLocalPlayer = RTSokak.Network.RTSPlayer.localPlayer != null;
             bool isEnemy = hasLocalPlayer && !IsOwnedByLocalPlayer();
 
+            bool targetEnabled;
+            Outline.Mode targetMode = Outline.Mode.OutlineAll;
+            Color targetColor;
+            float targetWidth;
+
             if (isEnemy)
             {
-                outline.OutlineMode = Outline.Mode.OutlineAll;
-                outline.OutlineColor = enemyOutlineColor;
-                outline.OutlineWidth = outlineWidth * 1.15f;
-                outline.enabled = true;
+                targetEnabled = true;
+                targetMode = Outline.Mode.OutlineAll;
+                targetColor = enemyOutlineColor;
+                targetWidth = outlineWidth * 1.15f;
             }
             else if (locallySelected)
             {
-                outline.OutlineMode = Outline.Mode.OutlineAll;
-                outline.OutlineColor = selectionColor;
-                outline.OutlineWidth = outlineWidth;
-                outline.enabled = true;
+                targetEnabled = true;
+                targetMode = Outline.Mode.OutlineAll;
+                targetColor = selectionColor;
+                targetWidth = outlineWidth;
             }
             else
             {
-                outline.enabled = false;
+                targetEnabled = false;
+                targetColor = outline.OutlineColor;
+                targetWidth = outline.OutlineWidth;
             }
+
+            if (outline.enabled == targetEnabled &&
+                (!targetEnabled || (outline.OutlineMode == targetMode &&
+                                    outline.OutlineColor == targetColor &&
+                                    Mathf.Approximately(outline.OutlineWidth, targetWidth))))
+            {
+                return;
+            }
+
+            outline.OutlineMode = targetMode;
+            outline.OutlineColor = targetColor;
+            outline.OutlineWidth = targetWidth;
+            outline.enabled = targetEnabled;
         }
 
         private void Update()

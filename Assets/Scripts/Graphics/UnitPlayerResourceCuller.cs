@@ -42,6 +42,7 @@ namespace RTSokak.Graphics
         private readonly List<TrackedItem> trackedBuildings = new List<TrackedItem>(128);
         private readonly List<TrackedItem> trackedUnits = new List<TrackedItem>(128);
         private readonly List<Renderer> tempBuf = new List<Renderer>(16);
+        private readonly HashSet<Transform> knownTransforms = new HashSet<Transform>();
 
         private RTSUnit playerUnit;
         private UnitPlayerController controller;
@@ -216,13 +217,6 @@ namespace RTSokak.Graphics
                 nextDynamicScan = now + 4f;
                 SoftUpdateDynamicEntities();
             }
-
-            // Периодическая синхронизация вражеских контуров по закешированным объектам (0 FindObjectsByType)
-            if (now >= nextOutlineSync)
-            {
-                nextOutlineSync = now + 2.5f;
-                SyncOutlinesFromCache();
-            }
         }
 
         private static void ProcessSlice(List<TrackedItem> list, ref int sliceIndex, int countToCheck, Vector3 origin, float maxDistSqr, int maxToggles)
@@ -279,10 +273,10 @@ namespace RTSokak.Graphics
 
             // 1. Ресурсы (сканируются единожды при старте FPS режима)
             trackedResources.Clear();
-            var foundRes = Object.FindObjectsByType<Resource>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < foundRes.Length; i++)
+            var allRes = Resource.AllResources;
+            for (int i = 0; i < allRes.Count; i++)
             {
-                Resource res = foundRes[i];
+                Resource res = allRes[i];
                 if (res != null && !res.IsHarvested)
                 {
                     bool shouldCull = follow != null && (res.transform.position - origin).sqrMagnitude > resSqr;
@@ -292,10 +286,10 @@ namespace RTSokak.Graphics
 
             // 2. Здания
             trackedBuildings.Clear();
-            var foundBld = Object.FindObjectsByType<Building>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < foundBld.Length; i++)
+            var allBld = Building.AllBuildings;
+            for (int i = 0; i < allBld.Count; i++)
             {
-                Building b = foundBld[i];
+                Building b = allBld[i];
                 if (b != null)
                 {
                     bool shouldCull = follow != null && (b.transform.position - origin).sqrMagnitude > bldSqr;
@@ -305,10 +299,10 @@ namespace RTSokak.Graphics
 
             // 3. Юниты (кроме самого игрока)
             trackedUnits.Clear();
-            var foundUnits = Object.FindObjectsByType<RTSUnit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < foundUnits.Length; i++)
+            var allUnits = RTSUnit.AllUnits;
+            for (int i = 0; i < allUnits.Count; i++)
             {
-                RTSUnit u = foundUnits[i];
+                RTSUnit u = allUnits[i];
                 if (u != null && u.IsAlive)
                 {
                     if (u == playerUnit || (controller != null && u == controller.ControlledUnit))
@@ -361,76 +355,54 @@ namespace RTSokak.Graphics
             float bldSqr = buildingCullDistance > 1f ? buildingCullDistance * buildingCullDistance : float.MaxValue;
             float unitSqr = unitCullDistance > 1f ? unitCullDistance * unitCullDistance : float.MaxValue;
 
-            // Мягкое добавление новых зданий (их мало, единицы)
-            var foundBld = Object.FindObjectsByType<Building>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < foundBld.Length; i++)
+            knownTransforms.Clear();
+            for (int j = 0; j < trackedBuildings.Count; j++)
             {
-                Building b = foundBld[i];
-                if (b == null) continue;
-                bool exists = false;
-                for (int j = 0; j < trackedBuildings.Count; j++)
-                {
-                    if (trackedBuildings[j].transform == b.transform)
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists)
+                if (trackedBuildings[j]?.transform != null)
+                    knownTransforms.Add(trackedBuildings[j].transform);
+            }
+
+            // Мягкое добавление новых зданий (O(1) через HashSet и статический список)
+            var allBld = Building.AllBuildings;
+            for (int i = 0; i < allBld.Count; i++)
+            {
+                Building b = allBld[i];
+                if (b == null || b.transform == null) continue;
+                if (!knownTransforms.Contains(b.transform))
                 {
                     bool shouldCull = follow != null && (b.transform.position - origin).sqrMagnitude > bldSqr;
                     trackedBuildings.Add(CreateTrackedItem(b.gameObject, shouldCull));
+                    knownTransforms.Add(b.transform);
                 }
             }
 
-            // Мягкое добавление новых юнитов (их мало)
-            var foundUnits = Object.FindObjectsByType<RTSUnit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-            for (int i = 0; i < foundUnits.Length; i++)
+            knownTransforms.Clear();
+            for (int j = 0; j < trackedUnits.Count; j++)
             {
-                RTSUnit u = foundUnits[i];
-                if (u == null || !u.IsAlive) continue;
+                if (trackedUnits[j]?.transform != null)
+                    knownTransforms.Add(trackedUnits[j].transform);
+            }
+
+            // Мягкое добавление новых юнитов (O(1) через HashSet и статический список)
+            var allUnits = RTSUnit.AllUnits;
+            for (int i = 0; i < allUnits.Count; i++)
+            {
+                RTSUnit u = allUnits[i];
+                if (u == null || !u.IsAlive || u.transform == null) continue;
                 if (u == playerUnit || (controller != null && u == controller.ControlledUnit)) continue;
 
-                bool exists = false;
-                for (int j = 0; j < trackedUnits.Count; j++)
-                {
-                    if (trackedUnits[j].transform == u.transform)
-                    {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists)
+                if (!knownTransforms.Contains(u.transform))
                 {
                     bool shouldCull = follow != null && (u.transform.position - origin).sqrMagnitude > unitSqr;
                     trackedUnits.Add(CreateTrackedItem(u.gameObject, shouldCull));
+                    knownTransforms.Add(u.transform);
                 }
             }
         }
 
         private void SyncOutlinesFromCache()
         {
-            for (int i = 0; i < trackedBuildings.Count; i++)
-            {
-                var item = trackedBuildings[i];
-                if (item != null && item.transform != null)
-                {
-                    var b = item.transform.GetComponent<Building>();
-                    if (b != null)
-                        b.ForceUpdateOutline();
-                }
-            }
-
-            for (int i = 0; i < trackedUnits.Count; i++)
-            {
-                var item = trackedUnits[i];
-                if (item != null && item.transform != null)
-                {
-                    var u = item.transform.GetComponent<RTSUnit>();
-                    if (u != null)
-                        u.ForceUpdateOutline();
-                }
-            }
+            // Отключено: UpdateOutline вызывается по событиям владения/выбора без спайков
         }
 
         private TrackedItem CreateTrackedItem(GameObject go, bool isCulled = false)

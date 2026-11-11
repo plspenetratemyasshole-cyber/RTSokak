@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
+using RTSokak.Buildings;
 
 namespace RTSokak.Navigation
 {
@@ -21,7 +22,9 @@ namespace RTSokak.Navigation
         
         private NavMeshData navMeshData;
         private NavMeshDataInstance navMeshInstance;
-        private List<NavMeshBuildSource> sources = new List<NavMeshBuildSource>();
+        private readonly List<NavMeshBuildSource> sources = new List<NavMeshBuildSource>();
+        private readonly List<NavMeshBuildSource> walkableSources = new List<NavMeshBuildSource>();
+        private AsyncOperation bakeOperation;
         
         private float lastUpdateTime;
         private bool needsRebake = false;
@@ -32,6 +35,9 @@ namespace RTSokak.Navigation
             navMeshData = new NavMeshData();
             navMeshInstance = NavMesh.AddNavMeshData(navMeshData);
             
+            // Кэшируем поверхности для ходьбы один раз при старте
+            CacheWalkableSurfaces();
+
             // Первичное запекание
             RebakeNavMesh();
         }
@@ -40,26 +46,30 @@ namespace RTSokak.Navigation
         {
             if (autoUpdate && Time.time - lastUpdateTime > updateInterval)
             {
-                if (needsRebake)
+                if (needsRebake && (bakeOperation == null || bakeOperation.isDone))
                 {
-                    RebakeNavMesh();
                     needsRebake = false;
+                    RebakeNavMesh();
                 }
                 lastUpdateTime = Time.time;
             }
         }
 
         /// <summary>
-        /// Перезапекает NavMesh
+        /// Перезапекает NavMesh асинхронно
         /// </summary>
         public void RebakeNavMesh()
         {
+            if (bakeOperation != null && !bakeOperation.isDone)
+            {
+                needsRebake = true;
+                return;
+            }
+
             sources.Clear();
+            sources.AddRange(walkableSources);
             
-            // Собираем все поверхности для ходьбы
-            CollectWalkableSurfaces();
-            
-            // Собираем все препятствия
+            // Собираем все препятствия (здания)
             CollectObstacles();
             
             // Настройки NavMesh
@@ -68,52 +78,57 @@ namespace RTSokak.Navigation
             // Bounds для запекания
             Bounds bounds = new Bounds(transform.position, navMeshSize);
             
-            // Запекаем NavMesh
-            NavMeshBuilder.UpdateNavMeshData(navMeshData, settings, sources, bounds);
-            
-            UnityEngine.Debug.Log($"NavMesh rebaked with {sources.Count} sources");
+            // Запекаем NavMesh асинхронно
+            bakeOperation = NavMeshBuilder.UpdateNavMeshDataAsync(navMeshData, settings, sources, bounds);
         }
 
         /// <summary>
-        /// Собирает поверхности для ходьбы
+        /// Кэширует поверхности для ходьбы один раз при старте
         /// </summary>
-        private void CollectWalkableSurfaces()
+        private void CacheWalkableSurfaces()
         {
-            // Находим все объекты на walkable слоях
-            GameObject[] walkableObjects = FindObjectsInLayers(walkableLayers);
-            
-            foreach (GameObject obj in walkableObjects)
+            walkableSources.Clear();
+            var allFilters = Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < allFilters.Length; i++)
             {
-                MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
+                MeshFilter meshFilter = allFilters[i];
+                if (meshFilter == null || meshFilter.sharedMesh == null)
+                    continue;
+
+                if (((1 << meshFilter.gameObject.layer) & walkableLayers) != 0)
                 {
-                    NavMeshBuildSource source = new NavMeshBuildSource();
-                    source.shape = NavMeshBuildSourceShape.Mesh;
-                    source.sourceObject = meshFilter.sharedMesh;
-                    source.transform = meshFilter.transform.localToWorldMatrix;
-                    source.area = 0; // Walkable area
-                    sources.Add(source);
+                    NavMeshBuildSource source = new NavMeshBuildSource
+                    {
+                        shape = NavMeshBuildSourceShape.Mesh,
+                        sourceObject = meshFilter.sharedMesh,
+                        transform = meshFilter.transform.localToWorldMatrix,
+                        area = 0 // Walkable area
+                    };
+                    walkableSources.Add(source);
                 }
             }
         }
 
         /// <summary>
-        /// Собирает препятствия
+        /// Собирает препятствия из активных зданий
         /// </summary>
         private void CollectObstacles()
         {
-            // Находим все объекты на obstacle слоях
-            GameObject[] obstacleObjects = FindObjectsInLayers(obstacleLayers);
-            
-            foreach (GameObject obj in obstacleObjects)
+            var buildings = Building.AllBuildings;
+            for (int i = 0; i < buildings.Count; i++)
             {
-                Collider collider = obj.GetComponent<Collider>();
+                Building b = buildings[i];
+                if (b == null) continue;
+
+                Collider collider = b.GetComponent<Collider>();
                 if (collider != null)
                 {
-                    NavMeshBuildSource source = new NavMeshBuildSource();
-                    source.shape = NavMeshBuildSourceShape.Box;
-                    source.transform = Matrix4x4.TRS(collider.bounds.center, obj.transform.rotation, collider.bounds.size);
-                    source.area = 1; // Not walkable area
+                    NavMeshBuildSource source = new NavMeshBuildSource
+                    {
+                        shape = NavMeshBuildSourceShape.Box,
+                        transform = Matrix4x4.TRS(collider.bounds.center, b.transform.rotation, collider.bounds.size),
+                        area = 1 // Not walkable area
+                    };
                     sources.Add(source);
                 }
             }
@@ -125,25 +140,6 @@ namespace RTSokak.Navigation
         public void MarkDirty()
         {
             needsRebake = true;
-        }
-
-        /// <summary>
-        /// Находит все объекты на указанных слоях
-        /// </summary>
-        private GameObject[] FindObjectsInLayers(LayerMask layers)
-        {
-            List<GameObject> result = new List<GameObject>();
-            GameObject[] allObjects = FindObjectsOfType<GameObject>();
-            
-            foreach (GameObject obj in allObjects)
-            {
-                if (((1 << obj.layer) & layers) != 0)
-                {
-                    result.Add(obj);
-                }
-            }
-            
-            return result.ToArray();
         }
 
         private void OnDestroy()

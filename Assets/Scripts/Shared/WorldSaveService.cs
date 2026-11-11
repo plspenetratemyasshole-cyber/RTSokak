@@ -197,8 +197,17 @@ namespace RTSokak.Shared
                 string directory = GetWorldDirectory(sanitized);
                 Directory.CreateDirectory(directory);
                 string path = GetWorldLevelPath(sanitized);
-                File.WriteAllText(path, ToJson(data));
-                UnityEngine.Debug.Log($"[WorldSave] Saved world '{sanitized}' to: {path}");
+
+                var dto = SaveFileDto.FromRuntime(data);
+                string json = JsonUtility.ToJson(dto, false);
+
+                string tempPath = path + ".tmp";
+                File.WriteAllText(tempPath, json);
+                if (File.Exists(path))
+                    File.Delete(path);
+                File.Move(tempPath, path);
+
+                UnityEngine.Debug.Log($"[WorldSave] Saved world '{sanitized}' to: {path} ({json.Length} bytes)");
                 return true;
             }
             catch (Exception ex)
@@ -206,6 +215,14 @@ namespace RTSokak.Shared
                 error = ex.Message;
                 return false;
             }
+        }
+
+        public static System.Threading.Tasks.Task<bool> TrySaveWorldAsync(string worldName, RTSWorldSaveData data)
+        {
+            return System.Threading.Tasks.Task.Run(() =>
+            {
+                return TrySaveWorld(worldName, data, out _);
+            });
         }
 
         public static void OpenSavesFolder()
@@ -227,10 +244,10 @@ namespace RTSokak.Shared
         }
 
         /// <summary>JsonUtility is reliable with arrays; Lists are converted at the boundary.</summary>
-        public static string ToJson(RTSWorldSaveData data)
+        public static string ToJson(RTSWorldSaveData data, bool prettyPrint = false)
         {
             var dto = SaveFileDto.FromRuntime(data);
-            return JsonUtility.ToJson(dto, true);
+            return JsonUtility.ToJson(dto, prettyPrint);
         }
 
         public static RTSWorldSaveData FromJson(string json)

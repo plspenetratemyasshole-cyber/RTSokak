@@ -21,6 +21,11 @@ namespace RTSokak.UI
         [SerializeField] private RectTransform hotbarRoot;
         [SerializeField] private TextMeshProUGUI resourcesText;
 
+        [Header("Health Bar")]
+        [SerializeField] private RectTransform healthBarRoot;
+        [SerializeField] private Image healthFillImage;
+        [SerializeField] private TextMeshProUGUI healthText;
+
         [Header("Hotbar")]
         [SerializeField] private Color slotNormal = new Color(0.15f, 0.16f, 0.2f, 0.9f);
         [SerializeField] private Color slotSelected = new Color(0.15f, 0.65f, 0.25f, 0.95f);
@@ -33,7 +38,106 @@ namespace RTSokak.UI
         private string[] currentTools = System.Array.Empty<string>();
         private RTSUnit boundUnit;
 
+        private int lastHp = -1;
+        private int lastMaxHp = -1;
+        private float displayedFill = 1f;
+        private int lastWood = -1;
+        private int lastOre = -1;
+        private int lastFood = -1;
+        private Sprite whiteSprite;
+
         public int SelectedSlot => selectedSlot;
+
+        private Sprite GetWhiteSprite()
+        {
+            if (whiteSprite == null)
+            {
+                Texture2D tex = Texture2D.whiteTexture;
+                whiteSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            }
+            return whiteSprite;
+        }
+
+        public void EnsureHealthBarUI()
+        {
+            if (healthBarRoot != null || hudRoot == null)
+                return;
+
+            Transform existing = hudRoot.transform.Find("HealthBar");
+            if (existing != null)
+            {
+                healthBarRoot = existing as RectTransform;
+                if (healthBarRoot != null)
+                {
+                    Transform fillTr = healthBarRoot.Find("Fill");
+                    if (fillTr != null)
+                        healthFillImage = fillTr.GetComponent<Image>();
+                    Transform textTr = healthBarRoot.Find("Text");
+                    if (textTr != null)
+                        healthText = textTr.GetComponent<TextMeshProUGUI>();
+                    return;
+                }
+            }
+
+            // Adjust resourcesText position if needed so it doesn't overlap HealthBar
+            if (resourcesText != null)
+            {
+                var resRt = resourcesText.rectTransform;
+                if (resRt != null && Mathf.Abs(resRt.anchoredPosition.y - 88f) < 5f)
+                {
+                    resRt.anchoredPosition = new Vector2(resRt.anchoredPosition.x, 124f);
+                }
+            }
+
+            // Create HealthBar container
+            GameObject hbGo = new GameObject("HealthBar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            hbGo.transform.SetParent(hudRoot.transform, false);
+            healthBarRoot = hbGo.GetComponent<RectTransform>();
+            healthBarRoot.anchorMin = new Vector2(0.5f, 0f);
+            healthBarRoot.anchorMax = new Vector2(0.5f, 0f);
+            healthBarRoot.pivot = new Vector2(0.5f, 0f);
+            healthBarRoot.anchoredPosition = new Vector2(0f, 92f);
+            healthBarRoot.sizeDelta = new Vector2(260f, 26f);
+
+            var bgImage = hbGo.GetComponent<Image>();
+            bgImage.color = new Color(0.1f, 0.1f, 0.12f, 0.88f);
+            bgImage.raycastTarget = false;
+
+            // Child Fill
+            GameObject fillGo = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            fillGo.transform.SetParent(healthBarRoot, false);
+            var fillRt = fillGo.GetComponent<RectTransform>();
+            fillRt.anchorMin = new Vector2(0f, 0f);
+            fillRt.anchorMax = new Vector2(1f, 1f);
+            fillRt.offsetMin = new Vector2(2f, 2f);
+            fillRt.offsetMax = new Vector2(-2f, -2f);
+
+            healthFillImage = fillGo.GetComponent<Image>();
+            healthFillImage.sprite = GetWhiteSprite();
+            healthFillImage.type = Image.Type.Filled;
+            healthFillImage.fillMethod = Image.FillMethod.Horizontal;
+            healthFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+            healthFillImage.fillAmount = 1f;
+            healthFillImage.color = new Color(0.2f, 0.85f, 0.3f, 1f);
+            healthFillImage.raycastTarget = false;
+
+            // Child Text
+            GameObject textGo = new GameObject("Text", typeof(RectTransform));
+            textGo.transform.SetParent(healthBarRoot, false);
+            var textRt = textGo.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = Vector2.zero;
+            textRt.offsetMax = Vector2.zero;
+
+            healthText = textGo.AddComponent<TextMeshProUGUI>();
+            healthText.fontSize = 15;
+            healthText.fontStyle = FontStyles.Bold;
+            healthText.alignment = TextAlignmentOptions.Center;
+            healthText.color = Color.white;
+            healthText.raycastTarget = false;
+            healthText.text = "HP: 100 / 100";
+        }
 
         private void Awake()
         {
@@ -43,6 +147,7 @@ namespace RTSokak.UI
                 return;
             }
             Instance = this;
+            EnsureHealthBarUI();
             if (hudRoot != null)
                 hudRoot.SetActive(false);
         }
@@ -74,6 +179,7 @@ namespace RTSokak.UI
 
             Show();
             HandleHotbarInput();
+            RefreshHealth(unit);
             RefreshResources(unit);
         }
 
@@ -221,6 +327,55 @@ namespace RTSokak.UI
             }
         }
 
+        private void RefreshHealth(RTSUnit unit)
+        {
+            if (unit == null)
+                return;
+
+            EnsureHealthBarUI();
+            if (healthBarRoot == null)
+                return;
+
+            int hp = Mathf.Max(0, unit.CurrentHealth);
+            int maxHp = Mathf.Max(1, unit.MaxHealth);
+            float targetFill = Mathf.Clamp01((float)hp / maxHp);
+
+            displayedFill = Mathf.Lerp(displayedFill, targetFill, Time.deltaTime * 12f);
+            if (Mathf.Abs(displayedFill - targetFill) < 0.001f)
+                displayedFill = targetFill;
+
+            if (healthFillImage != null)
+            {
+                if (healthFillImage.type == Image.Type.Filled)
+                {
+                    healthFillImage.fillAmount = displayedFill;
+                }
+                else
+                {
+                    healthFillImage.rectTransform.anchorMax = new Vector2(displayedFill, 1f);
+                }
+
+                float ratio = (float)hp / maxHp;
+                Color barColor;
+                if (ratio > 0.5f)
+                    barColor = new Color(0.2f, 0.85f, 0.3f, 1f);
+                else if (ratio >= 0.25f)
+                    barColor = new Color(0.95f, 0.8f, 0.15f, 1f);
+                else
+                    barColor = new Color(0.95f, 0.2f, 0.2f, 1f);
+
+                healthFillImage.color = barColor;
+            }
+
+            if (hp != lastHp || maxHp != lastMaxHp)
+            {
+                lastHp = hp;
+                lastMaxHp = maxHp;
+                if (healthText != null)
+                    healthText.text = $"HP: {hp} / {maxHp}";
+            }
+        }
+
         private void RefreshResources(RTSUnit unit)
         {
             if (resourcesText == null)
@@ -228,18 +383,31 @@ namespace RTSokak.UI
 
             if (unit is Worker w)
             {
-                resourcesText.gameObject.SetActive(true);
-                resourcesText.text =
-                    $"Wood {w.InventoryWood}   Ore {w.InventoryOre}   Food {w.InventoryFood}";
+                if (!resourcesText.gameObject.activeSelf)
+                    resourcesText.gameObject.SetActive(true);
+
+                int wood = w.InventoryWood;
+                int ore = w.InventoryOre;
+                int food = w.InventoryFood;
+
+                if (wood != lastWood || ore != lastOre || food != lastFood)
+                {
+                    lastWood = wood;
+                    lastOre = ore;
+                    lastFood = food;
+                    resourcesText.text = $"Wood {wood}   Ore {ore}   Food {food}";
+                }
             }
             else
             {
-                resourcesText.gameObject.SetActive(false);
+                if (resourcesText.gameObject.activeSelf)
+                    resourcesText.gameObject.SetActive(false);
             }
         }
 
         private void Show()
         {
+            EnsureHealthBarUI();
             if (hudRoot != null && !hudRoot.activeSelf)
                 hudRoot.SetActive(true);
             if (crosshair != null)
@@ -249,6 +417,11 @@ namespace RTSokak.UI
         private void Hide()
         {
             boundUnit = null;
+            lastHp = -1;
+            lastMaxHp = -1;
+            lastWood = -1;
+            lastOre = -1;
+            lastFood = -1;
             if (hudRoot != null && hudRoot.activeSelf)
                 hudRoot.SetActive(false);
         }

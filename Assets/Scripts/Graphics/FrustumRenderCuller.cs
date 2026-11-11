@@ -27,56 +27,19 @@ namespace RTSokak.Graphics
             // for large worlds (hundreds of trees/ore).
         }
 
+        void Awake()
+        {
+            enabled = false;
+        }
+
+        void OnEnable()
+        {
+            enabled = false;
+        }
+
         void LateUpdate()
         {
-            float now = Time.unscaledTime;
-            if (now >= nextRescan)
-            {
-                nextRescan = now + 1f;
-                Rescan();
-            }
-
-            if (now < nextRefresh)
-                return;
-            nextRefresh = now + Mathf.Max(0.05f, refreshInterval);
-
-            if (cam == null)
-                cam = UnityEngine.Camera.main;
-            if (cam == null)
-                return;
-
-            GeometryUtility.CalculateFrustumPlanes(cam, planes);
-
-            for (int i = tracked.Count - 1; i >= 0; i--)
-            {
-                Renderer r = tracked[i];
-                if (r == null)
-                {
-                    tracked.RemoveAt(i);
-                    continue;
-                }
-
-                int id = r.GetInstanceID();
-                Bounds b = r.bounds;
-                b.Expand(padding * 2f);
-                bool inView = GeometryUtility.TestPlanesAABB(planes, b);
-
-                if (inView)
-                {
-                    if (culledByUs.Remove(id))
-                        r.enabled = true;
-                }
-                else
-                {
-                    // Не включаем обратно то, что уже было выключено не нами
-                    // (срубленное дерево, скрытый объект).
-                    if (r.enabled)
-                    {
-                        r.enabled = false;
-                        culledByUs.Add(id);
-                    }
-                }
-            }
+            return;
         }
 
         void Rescan()

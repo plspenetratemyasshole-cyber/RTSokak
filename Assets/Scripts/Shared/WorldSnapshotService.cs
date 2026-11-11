@@ -31,9 +31,16 @@ namespace RTSokak.Shared
 
             // Дедуп по playerIndex: при reconnect могли остаться лишние объекты
             var playersByIndex = new Dictionary<int, RTSPlayer>();
+            var playersByConnId = new Dictionary<int, RTSPlayer>();
             foreach (var p in allPlayers)
             {
-                if (p == null || p.PlayerIndex < 0)
+                if (p == null)
+                    continue;
+
+                if (p.ConnectionId >= 0 && !playersByConnId.ContainsKey(p.ConnectionId))
+                    playersByConnId[p.ConnectionId] = p;
+
+                if (p.PlayerIndex < 0)
                     continue;
 
                 if (!playersByIndex.TryGetValue(p.PlayerIndex, out RTSPlayer existing) || existing == null)
@@ -47,7 +54,11 @@ namespace RTSokak.Shared
                 int score = p.Wood + p.Ore + p.Food + p.MaxPopulation;
                 if (score > existingScore ||
                     (!string.IsNullOrEmpty(p.Nickname) && string.IsNullOrEmpty(existing.Nickname)))
+                {
                     playersByIndex[p.PlayerIndex] = p;
+                    if (p.ConnectionId >= 0)
+                        playersByConnId[p.ConnectionId] = p;
+                }
             }
 
             // Сохранить живых игроков
@@ -113,18 +124,11 @@ namespace RTSokak.Shared
                 if (b == null) continue;
                 int buildingOwnerIndex = b.OwnerPlayerIndex >= 0
                     ? b.OwnerPlayerIndex
-                    : FindPlayerIndex(b.OwnerConnectionId);
+                    : (playersByConnId.TryGetValue(b.OwnerConnectionId, out var pb) ? pb.PlayerIndex : -1);
                 string buildingOwnerNick = b.OwnerNickname;
-                if (string.IsNullOrEmpty(buildingOwnerNick) && buildingOwnerIndex >= 0)
+                if (string.IsNullOrEmpty(buildingOwnerNick) && buildingOwnerIndex >= 0 && playersByIndex.TryGetValue(buildingOwnerIndex, out var p))
                 {
-                    foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
-                    {
-                        if (p != null && p.PlayerIndex == buildingOwnerIndex)
-                        {
-                            buildingOwnerNick = p.Nickname;
-                            break;
-                        }
-                    }
+                    buildingOwnerNick = p.Nickname;
                 }
                 if (buildingOwnerIndex < 0 && string.IsNullOrEmpty(buildingOwnerNick))
                 {
@@ -211,18 +215,11 @@ namespace RTSokak.Shared
                 
                 int unitOwnerIndex = u.OwnerPlayerIndex >= 0
                     ? u.OwnerPlayerIndex
-                    : FindPlayerIndex(u.OwnerConnectionId);
+                    : (playersByConnId.TryGetValue(u.OwnerConnectionId, out var pu) ? pu.PlayerIndex : -1);
                 string unitOwnerNick = u.OwnerNickname;
-                if (string.IsNullOrEmpty(unitOwnerNick) && unitOwnerIndex >= 0)
+                if (string.IsNullOrEmpty(unitOwnerNick) && unitOwnerIndex >= 0 && playersByIndex.TryGetValue(unitOwnerIndex, out var p))
                 {
-                    foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
-                    {
-                        if (p != null && p.PlayerIndex == unitOwnerIndex)
-                        {
-                            unitOwnerNick = p.Nickname;
-                            break;
-                        }
-                    }
+                    unitOwnerNick = p.Nickname;
                 }
 
                 // Юниты с ником сохраняем даже без playerIndex (оффлайн-владелец)
@@ -248,8 +245,10 @@ namespace RTSokak.Shared
                 data.units.Add(entry);
             }
 
-            foreach (var r in Object.FindObjectsByType<Resource>(FindObjectsSortMode.None))
+            var allRes = Resource.AllResources.Count > 0 ? (IReadOnlyList<Resource>)Resource.AllResources : Object.FindObjectsByType<Resource>(FindObjectsSortMode.None);
+            for (int i = 0; i < allRes.Count; i++)
             {
+                var r = allRes[i];
                 if (r == null || r.IsHarvested) continue;
                 data.resources.Add(new ResourceSaveData
                 {

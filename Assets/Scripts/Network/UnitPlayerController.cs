@@ -107,6 +107,17 @@ namespace RTSokak.Network
         private UnitPlayerScreenFog screenFog;
         private Rigidbody controlledRb;
         private RigidbodyInterpolation savedRbInterpolation;
+        private Vector3 knockbackVelocity;
+        private float knockbackUngroundTimer;
+
+        public void ApplyKnockback(Vector3 impulse)
+        {
+            knockbackVelocity = new Vector3(impulse.x, 0f, impulse.z) * 2.4f;
+            verticalVel = Mathf.Max(verticalVel, impulse.y * 3.0f);
+            grounded = false;
+            knockbackUngroundTimer = 0.16f;
+            nextMoveSendTime = 0f; // сразу отправить начало отлёта на сервер
+        }
 
         public float MouseSensitivity
         {
@@ -198,6 +209,8 @@ namespace RTSokak.Network
         public void AttachToUnit(RTSUnit unit)
         {
             Detach();
+            knockbackVelocity = Vector3.zero;
+            knockbackUngroundTimer = 0f;
             if (unit == null)
                 return;
 
@@ -331,6 +344,8 @@ namespace RTSokak.Network
 
         public void Detach()
         {
+            knockbackVelocity = Vector3.zero;
+            knockbackUngroundTimer = 0f;
             RestoreHiddenMeshes();
             ApplyUnitFog(false);
             QualitySettings.shadowDistance = savedShadowDistance;
@@ -635,8 +650,16 @@ namespace RTSokak.Network
                 grounded = false;
             }
 
-            Vector3 horizontal = ResolveHorizontalMove(before, wish);
+            float inputScale = knockbackVelocity.sqrMagnitude > 0.5f ? 0.3f : 1f;
+            Vector3 totalWish = wish * inputScale + knockbackVelocity * Time.deltaTime;
+            Vector3 horizontal = ResolveHorizontalMove(before, totalWish);
             Vector3 pos = before + horizontal;
+
+            if (knockbackUngroundTimer > 0f)
+            {
+                knockbackUngroundTimer -= Time.deltaTime;
+                grounded = false;
+            }
 
             if (grounded)
             {
@@ -666,13 +689,13 @@ namespace RTSokak.Network
                 verticalVel += gravity * Time.deltaTime;
                 pos.y = before.y + verticalVel * Time.deltaTime;
 
-                if (verticalVel <= 0f && hasCachedGround && pos.y <= standY + 0.12f)
+                if (verticalVel <= 0f && knockbackUngroundTimer <= 0f && hasCachedGround && pos.y <= standY + 0.12f)
                 {
                     pos.y = standY;
                     verticalVel = 0f;
                     grounded = true;
                 }
-                else if (verticalVel <= 0f && NavMesh.SamplePosition(pos, out NavMeshHit navHit, 1.5f, NavMesh.AllAreas))
+                else if (verticalVel <= 0f && knockbackUngroundTimer <= 0f && NavMesh.SamplePosition(pos, out NavMeshHit navHit, 1.5f, NavMesh.AllAreas))
                 {
                     float navStandY = navHit.position.y + standOffset;
                     if (pos.y <= navStandY + 0.12f)
@@ -684,6 +707,12 @@ namespace RTSokak.Network
                         hasCachedGround = true;
                     }
                 }
+            }
+
+            if (knockbackVelocity.sqrMagnitude > 0.0001f)
+            {
+                float damping = grounded ? 18f : 7.5f;
+                knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, damping * Time.deltaTime);
             }
 
             controlledUnit.transform.position = pos;

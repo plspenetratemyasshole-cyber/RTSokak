@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 using UnityEngine.AI;
@@ -157,6 +158,18 @@ namespace RTSokak.Network
         private int huntOwnerConnectionId = -1;
         private float savedStoppingDistance = -1f;
         
+        public static readonly List<RTSUnit> AllUnits = new List<RTSUnit>();
+
+        protected virtual void OnEnable()
+        {
+            AllUnits.Add(this);
+        }
+
+        protected virtual void OnDisable()
+        {
+            AllUnits.Remove(this);
+        }
+
         protected RTSokak.UI.UnitHealthBar healthBar;
         private NetworkTransformBase networkTransform;
         private Vector3 clientCorrectionTarget;
@@ -1676,6 +1689,24 @@ namespace RTSokak.Network
         [Server]
         private void ServerApplyKnockback(Vector3 knockbackDir)
         {
+            Vector3 flat = knockbackDir;
+            flat.y = 0f;
+            if (flat.sqrMagnitude < 0.001f)
+                flat = transform.forward;
+            flat.Normalize();
+            // Небольшой разброс — бой выглядит живее, не «по рельсам»
+            flat = Quaternion.Euler(0f, Random.Range(-18f, 18f), 0f) * flat;
+
+            float forceScale = 0.9f + Random.Range(0f, 0.35f);
+            Vector3 impulse = flat * (knockbackForce * forceScale)
+                              + Vector3.up * (knockbackUpForce * (0.85f + Random.Range(0f, 0.3f)));
+
+            if (IsPlayerControlled)
+            {
+                RpcApplyPlayerKnockback(impulse);
+                return;
+            }
+
             if (unitRigidbody == null)
                 unitRigidbody = GetComponent<Rigidbody>();
             if (unitRigidbody == null)
@@ -1698,17 +1729,6 @@ namespace RTSokak.Network
             unitRigidbody.linearVelocity = Vector3.zero;
             unitRigidbody.angularVelocity = Vector3.zero;
 
-            Vector3 flat = knockbackDir;
-            flat.y = 0f;
-            if (flat.sqrMagnitude < 0.001f)
-                flat = transform.forward;
-            flat.Normalize();
-            // Небольшой разброс — бой выглядит живее, не «по рельсам»
-            flat = Quaternion.Euler(0f, Random.Range(-18f, 18f), 0f) * flat;
-
-            float forceScale = 0.9f + Random.Range(0f, 0.35f);
-            Vector3 impulse = flat * (knockbackForce * forceScale)
-                              + Vector3.up * (knockbackUpForce * (0.85f + Random.Range(0f, 0.3f)));
             unitRigidbody.AddForce(impulse, ForceMode.Impulse);
 
             isKnockedBack = true;
@@ -1716,6 +1736,17 @@ namespace RTSokak.Network
             syncedKnockedBack = true;
             syncedNetPosition = transform.position;
             nextNetPosSyncTime = Time.time;
+        }
+
+        [ClientRpc(includeOwner = true)]
+        private void RpcApplyPlayerKnockback(Vector3 impulse)
+        {
+            if (UnitPlayerController.Instance != null &&
+                UnitPlayerController.Instance.IsActive &&
+                UnitPlayerController.Instance.ControlledUnit == this)
+            {
+                UnitPlayerController.Instance.ApplyKnockback(impulse);
+            }
         }
 
         [Server]
@@ -1804,6 +1835,9 @@ namespace RTSokak.Network
         {
             isKnockbackSettling = false;
             syncedKnockedBack = false;
+
+            if (IsPlayerControlled)
+                return;
 
             if (unitRigidbody != null)
                 SetAgentDrivenPhysics(true);
@@ -2089,32 +2123,50 @@ namespace RTSokak.Network
 
             if (UnitPlayerController.Instance != null && UnitPlayerController.Instance.IsActive && UnitPlayerController.Instance.ControlledUnit == this)
             {
+                if (!outline.enabled) return;
                 outline.enabled = false;
                 return;
             }
+
+            bool targetEnabled;
+            Outline.Mode targetMode = Outline.Mode.OutlineAll;
+            Color targetColor;
+            float targetWidth;
 
             if (IsOwned)
             {
                 if (isSelected)
                 {
-                    outline.OutlineMode = Outline.Mode.OutlineAll;
-                    ApplySelectionVisualColor(selectedOutlineColor);
-                    outline.OutlineWidth = outlineWidth;
-                    outline.enabled = true;
+                    targetEnabled = true;
+                    targetColor = selectedOutlineColor;
+                    targetWidth = outlineWidth;
                 }
                 else
                 {
-                    outline.enabled = false;
-                    outline.OutlineWidth = outlineWidth;
+                    targetEnabled = false;
+                    targetColor = outline.OutlineColor;
+                    targetWidth = outlineWidth;
                 }
             }
             else
             {
-                outline.OutlineMode = Outline.Mode.OutlineAll;
-                ApplySelectionVisualColor(enemyOutlineColor);
-                outline.OutlineWidth = outlineWidth * 1.15f;
-                outline.enabled = true;
+                targetEnabled = true;
+                targetColor = enemyOutlineColor;
+                targetWidth = outlineWidth * 1.15f;
             }
+
+            if (outline.enabled == targetEnabled &&
+                (!targetEnabled || (outline.OutlineMode == targetMode &&
+                                    outline.OutlineColor == targetColor &&
+                                    Mathf.Approximately(outline.OutlineWidth, targetWidth))))
+            {
+                return;
+            }
+
+            outline.OutlineMode = targetMode;
+            ApplySelectionVisualColor(targetColor);
+            outline.OutlineWidth = targetWidth;
+            outline.enabled = targetEnabled;
         }
         
         /// <summary>

@@ -84,6 +84,9 @@ namespace RTSokak.UI
 
         private Texture2D mapTexture;
         private Color32[] pixels;
+        private Color32[] resourceLayerPixels;
+        private bool resourceLayerDirty = true;
+        private int lastResourceCount = -1;
         private RectTransform rectTransform;
         private RectTransform mapRect;
 
@@ -133,6 +136,7 @@ namespace RTSokak.UI
         private void OnEnable()
         {
             worldDirty = true;
+            resourceLayerDirty = true;
             nextWorldRedrawTime = 0f;
             nextObjectScanTime = 0f;
             hasCamSample = false;
@@ -155,10 +159,9 @@ namespace RTSokak.UI
             {
                 nextObjectScanTime = Time.unscaledTime + Mathf.Max(1f, objectScanInterval);
                 ScanWorldObjects();
-                worldDirty = true;
             }
 
-            if (worldDirty && Time.unscaledTime >= nextWorldRedrawTime)
+            if (Time.unscaledTime >= nextWorldRedrawTime)
             {
                 nextWorldRedrawTime = Time.unscaledTime + Mathf.Max(0.2f, worldRefreshInterval);
                 if (autoWorldBounds)
@@ -179,10 +182,10 @@ namespace RTSokak.UI
 
         private void ForceWorldRedraw()
         {
-            ScanWorldObjects();
+            resourceLayerDirty = true;
+            nextWorldRedrawTime = 0f;
             RedrawWorldTexture();
             worldDirty = false;
-            nextWorldRedrawTime = Time.unscaledTime + Mathf.Max(0.2f, worldRefreshInterval);
         }
 
         private void EnsureLayout()
@@ -452,49 +455,52 @@ namespace RTSokak.UI
 
         private void ScanWorldObjects()
         {
-            resourcePositions.Clear();
-            resourceTypes.Clear();
-            trackedUnits.Clear();
-            trackedBuildings.Clear();
+            if (showResources)
+            {
+                int count = Resource.AllResources.Count;
+                if (count != lastResourceCount)
+                {
+                    lastResourceCount = count;
+                    resourceLayerDirty = true;
+                }
+            }
+        }
+
+        private void RebuildResourceLayer()
+        {
+            EnsureTexture();
+            if (pixels == null)
+                return;
+
+            int res = mapTexture.width;
+            int len = res * res;
+            if (resourceLayerPixels == null || resourceLayerPixels.Length != len)
+                resourceLayerPixels = new Color32[len];
+
+            Color32 bg = backgroundColor;
+            for (int i = 0; i < len; i++)
+                resourceLayerPixels[i] = bg;
 
             if (showResources)
             {
-                Resource[] resources = Object.FindObjectsByType<Resource>(FindObjectsSortMode.None);
-                for (int i = 0; i < resources.Length; i++)
+                var resources = Resource.AllResources;
+                for (int i = 0; i < resources.Count; i++)
                 {
                     Resource r = resources[i];
                     if (r == null || r.IsHarvested)
                         continue;
-                    resourcePositions.Add(r.transform.position);
-                    resourceTypes.Add((byte)r.Type);
+                    Color32 c = r.Type switch
+                    {
+                        ResourceType.Wood => woodColor,
+                        ResourceType.Ore => oreColor,
+                        ResourceType.Food => foodColor,
+                        _ => (Color32)Color.white
+                    };
+                    DrawDotWorldToBuffer(resourceLayerPixels, res, r.transform.position, resourceDotRadius, c);
                 }
             }
 
-            if (showUnits)
-            {
-                RTSUnit[] units = Object.FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-                for (int i = 0; i < units.Length; i++)
-                {
-                    RTSUnit u = units[i];
-                    if (u == null || !u.IsAlive)
-                        continue;
-                    trackedUnits.Add(u);
-                }
-            }
-
-            if (showBuildings)
-            {
-                Building[] buildings = Object.FindObjectsByType<Building>(FindObjectsSortMode.None);
-                for (int i = 0; i < buildings.Length; i++)
-                {
-                    Building b = buildings[i];
-                    if (b == null)
-                        continue;
-                    if (!showIncompleteBuildings && !b.IsComplete)
-                        continue;
-                    trackedBuildings.Add(b);
-                }
-            }
+            resourceLayerDirty = false;
         }
 
         private void RedrawWorldTexture()
@@ -504,35 +510,25 @@ namespace RTSokak.UI
                 return;
 
             int res = mapTexture.width;
-            Color32 bg = backgroundColor;
-            for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = bg;
+            int len = res * res;
 
-            if (showResources)
+            if (resourceLayerDirty || resourceLayerPixels == null || resourceLayerPixels.Length != len)
             {
-                for (int i = 0; i < resourcePositions.Count; i++)
-                {
-                    Color32 c = resourceTypes[i] switch
-                    {
-                        (byte)ResourceType.Wood => woodColor,
-                        (byte)ResourceType.Ore => oreColor,
-                        (byte)ResourceType.Food => foodColor,
-                        _ => (Color32)Color.white
-                    };
-                    DrawDotWorld(res, resourcePositions[i], resourceDotRadius, c);
-                }
+                RebuildResourceLayer();
             }
+
+            System.Array.Copy(resourceLayerPixels, pixels, len);
 
             if (showBuildings)
             {
-                for (int i = trackedBuildings.Count - 1; i >= 0; i--)
+                var buildings = Building.AllBuildings;
+                for (int i = 0; i < buildings.Count; i++)
                 {
-                    Building b = trackedBuildings[i];
+                    Building b = buildings[i];
                     if (b == null)
-                    {
-                        trackedBuildings.RemoveAt(i);
                         continue;
-                    }
+                    if (!showIncompleteBuildings && !b.IsComplete)
+                        continue;
 
                     Vector3 pos = b.FinalPosition != Vector3.zero ? b.FinalPosition : b.transform.position;
                     Color32 c = b.IsOwnedByLocalPlayer() ? ownBuildingColor : enemyBuildingColor;
@@ -542,14 +538,12 @@ namespace RTSokak.UI
 
             if (showUnits)
             {
-                for (int i = trackedUnits.Count - 1; i >= 0; i--)
+                var units = RTSUnit.AllUnits;
+                for (int i = 0; i < units.Count; i++)
                 {
-                    RTSUnit u = trackedUnits[i];
+                    RTSUnit u = units[i];
                     if (u == null || !u.IsAlive)
-                    {
-                        trackedUnits.RemoveAt(i);
                         continue;
-                    }
 
                     Color32 c = u.IsOwned ? ownUnitColor : enemyUnitColor;
                     DrawDotWorld(res, u.transform.position, unitDotRadius, c);
@@ -866,9 +860,15 @@ namespace RTSokak.UI
 
         private void DrawDotWorld(int res, Vector3 world, int radius, Color32 color)
         {
+            DrawDotWorldToBuffer(pixels, res, world, radius, color);
+        }
+
+        private void DrawDotWorldToBuffer(Color32[] buffer, int res, Vector3 world, int radius, Color32 color)
+        {
+            if (buffer == null) return;
             if (!WorldToPixel(world, res, out int px, out int py))
                 return;
-            DrawFilledCircle(res, px, py, Mathf.Max(1, radius), color);
+            DrawFilledCircleToBuffer(buffer, res, px, py, Mathf.Max(1, radius), color);
         }
 
         private bool WorldToPixel(Vector3 world, int res, out int px, out int py)
@@ -895,6 +895,12 @@ namespace RTSokak.UI
 
         private void DrawFilledCircle(int res, int cx, int cy, int radius, Color32 color)
         {
+            DrawFilledCircleToBuffer(pixels, res, cx, cy, radius, color);
+        }
+
+        private void DrawFilledCircleToBuffer(Color32[] buffer, int res, int cx, int cy, int radius, Color32 color)
+        {
+            if (buffer == null) return;
             int r2 = radius * radius;
             int yMin = Mathf.Max(0, cy - radius);
             int yMax = Mathf.Min(res - 1, cy + radius);
@@ -909,7 +915,7 @@ namespace RTSokak.UI
                 {
                     int dx = px - cx;
                     if (dx * dx + dy * dy <= r2)
-                        pixels[row + px] = color;
+                        buffer[row + px] = color;
                 }
             }
         }
