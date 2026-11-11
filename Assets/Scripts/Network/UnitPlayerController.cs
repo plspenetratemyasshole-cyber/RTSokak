@@ -404,6 +404,8 @@ namespace RTSokak.Network
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            RefreshFactionOutlines();
         }
 
         private void ReadUnitPlayerSettings(RTSUnit unit)
@@ -528,6 +530,12 @@ namespace RTSokak.Network
             {
                 Detach();
                 return;
+            }
+
+            if (Time.time >= nextOutlineRefreshTime)
+            {
+                nextOutlineRefreshTime = Time.time + 0.5f;
+                RefreshFactionOutlines();
             }
 
             if (Cursor.lockState != CursorLockMode.Locked)

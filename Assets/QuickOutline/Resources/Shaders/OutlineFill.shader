@@ -84,7 +84,7 @@ Shader "Custom/Outline Fill"
                 }
 
                 // Clear, visible outline in screen pixels (clamped to prevent bloated outlines)
-                float targetPixels = clamp(_OutlineWidth * 1.5, 1.5, 5.0);
+                float targetPixels = clamp(_OutlineWidth * 1.5, 1.5, 8.0);
                 float extrusion = targetPixels * unitsPerPixel;
 
                 // 3D extrusion in view space preserves full volume: top, bottom, and sides expand uniformly

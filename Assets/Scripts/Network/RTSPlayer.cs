@@ -636,14 +636,20 @@ namespace RTSokak.Network
         {
             OnRoleChanged?.Invoke(newRole);
             if (isLocalPlayer)
+            {
                 RTSokak.UI.PlayerRoleUI.NotifyLocalRoleChanged(this, newRole);
+                RefreshAllUnitOutlines();
+            }
         }
 
         void OnControlledUnitNetIdChanged(uint oldId, uint newId)
         {
             OnControlledUnitChanged?.Invoke(newId);
             if (isLocalPlayer)
+            {
                 RTSokak.UI.PlayerRoleUI.NotifyLocalControlledUnitChanged(this, newId);
+                RefreshAllUnitOutlines();
+            }
         }
 
         /// <summary>Клиент выбрал роль мэра → режим выбора точки поселения.</summary>

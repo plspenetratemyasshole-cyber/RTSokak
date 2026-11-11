@@ -249,7 +249,17 @@ namespace RTSokak.Network
                     return cachedIsOwned.Value;
 
                 bool owned = false;
-                if (RTSPlayer.localPlayer != null)
+                if (UnitPlayerController.Instance != null && UnitPlayerController.Instance.IsActive && UnitPlayerController.Instance.ControlledUnit != null)
+                {
+                    owned = IsSameOwnerAs(UnitPlayerController.Instance.ControlledUnit);
+                }
+                else if (RTSPlayer.localPlayer != null && RTSPlayer.localPlayer.Role == PlayerRole.UnitPlaying && RTSPlayer.localPlayer.ControlledUnitNetId != 0 &&
+                         NetworkClient.spawned.TryGetValue(RTSPlayer.localPlayer.ControlledUnitNetId, out NetworkIdentity id) &&
+                         id != null && id.TryGetComponent<RTSUnit>(out var controlledUnit))
+                {
+                    owned = IsSameOwnerAs(controlledUnit);
+                }
+                else if (RTSPlayer.localPlayer != null)
                 {
                     string factionNick = LocalFactionNickname;
 
@@ -335,8 +345,7 @@ namespace RTSokak.Network
 
         protected virtual void Start()
         {
-            if (outline != null)
-                outline.enabled = false;
+            UpdateOutline();
         }
 
         public override void OnStartServer()
@@ -2077,6 +2086,12 @@ namespace RTSokak.Network
         protected void UpdateOutline()
         {
             if (outline == null) return;
+
+            if (UnitPlayerController.Instance != null && UnitPlayerController.Instance.IsActive && UnitPlayerController.Instance.ControlledUnit == this)
+            {
+                outline.enabled = false;
+                return;
+            }
 
             if (IsOwned)
             {
