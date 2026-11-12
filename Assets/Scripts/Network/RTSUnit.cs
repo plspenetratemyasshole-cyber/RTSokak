@@ -633,7 +633,7 @@ namespace RTSokak.Network
         }
 
         [Server]
-        public void ServerClearPlayerController()
+        public virtual void ServerClearPlayerController()
         {
             controllerPlayerNetId = 0;
             if (navAgent != null)
@@ -1935,6 +1935,11 @@ namespace RTSokak.Network
         [ClientRpc(includeOwner = true)]
         private void RpcSwordSwing()
         {
+            TriggerSwordSwingAnimation();
+        }
+
+        public void TriggerSwordSwingAnimation()
+        {
             isAnimatingSword = true;
             swordAnimStartTime = Time.time;
             if (swordInstance == null)
@@ -1999,6 +2004,9 @@ namespace RTSokak.Network
             swordInstance.transform.localPosition = Vector3.zero;
             swordInstance.transform.localRotation = Quaternion.Euler(toolStartAngle, 0f, 0f);
             swordInstance.transform.localScale = Vector3.one;
+
+            foreach (var col in swordInstance.GetComponentsInChildren<Collider>(true))
+                col.enabled = false;
         }
 
         private void AnimateSword()

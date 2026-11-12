@@ -697,8 +697,10 @@ namespace RTSokak.UI
 
             if (unit == null)
             {
-                foreach (var u in trackedUnits)
+                var units = RTSUnit.AllUnits;
+                for (int i = 0; i < units.Count; i++)
                 {
+                    var u = units[i];
                     if (u != null && u.IsAlive && u.IsOwned && u.IsPlayerControlled)
                     {
                         unit = u;

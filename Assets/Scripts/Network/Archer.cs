@@ -92,6 +92,9 @@ namespace RTSokak.Network
             crossbowInstance.transform.localPosition = Vector3.zero;
             // Арбалет должен смотреть ВПЕРЁД горизонтально (не применяем toolStartAngle)
             crossbowInstance.transform.localRotation = Quaternion.identity;
+
+            foreach (var col in crossbowInstance.GetComponentsInChildren<Collider>(true))
+                col.enabled = false;
         }
 
         [Server]
@@ -463,6 +466,10 @@ namespace RTSokak.Network
             if (target == null || !target.IsAlive)
                 return;
 
+            isCrossbowEquipped = true;
+            SetCrossbowVisual(true);
+            RpcSetCrossbowEquipped(true);
+
             RememberHuntOwnerFromUnit(target);
 
             attackTarget = target;
@@ -488,6 +495,10 @@ namespace RTSokak.Network
             if (target == null || target.CurrentHealth <= 0)
                 return;
 
+            isCrossbowEquipped = true;
+            SetCrossbowVisual(true);
+            RpcSetCrossbowEquipped(true);
+
             RememberHuntOwnerFromBuilding(target);
 
             attackTarget = null;
@@ -505,6 +516,15 @@ namespace RTSokak.Network
             TrySetAgentDestination(dest);
             RpcSetPathLineMode(true);
             RpcMoveVisual(dest);
+        }
+
+        [Server]
+        public override void ServerClearPlayerController()
+        {
+            base.ServerClearPlayerController();
+            isCrossbowEquipped = true;
+            SetCrossbowVisual(true);
+            RpcSetCrossbowEquipped(true);
         }
 
         protected override void OnServerCancelTasksForMove()

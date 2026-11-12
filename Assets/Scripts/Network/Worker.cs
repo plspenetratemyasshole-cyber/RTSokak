@@ -2255,6 +2255,9 @@ namespace RTSokak.Network
             currentToolInstance.transform.localPosition = Vector3.zero;
             currentToolInstance.transform.localRotation = Quaternion.Euler(toolStartAngle, 0, 0);
             
+            foreach (var col in currentToolInstance.GetComponentsInChildren<Collider>(true))
+                col.enabled = false;
+            
             // НЕ запускаем анимацию сразу - она начнется после завершения поворота
             toolAnimationStartTime = Time.time;
             // isAnimatingTool будет установлен в true после завершения поворота
@@ -2278,9 +2281,15 @@ namespace RTSokak.Network
             // Один свинг юнита-игрока — останавливаем анимацию в конце
             if (toolAnimDurationOverride > 0.01f && elapsed >= duration)
             {
-                currentToolInstance.transform.localRotation = Quaternion.Euler(toolStartAngle, 0, 0);
+                if (currentToolInstance != null)
+                    currentToolInstance.transform.localRotation = Quaternion.Euler(toolStartAngle, 0, 0);
                 isAnimatingTool = false;
                 toolAnimDurationOverride = 0f;
+                if (activeToolType < 0 && currentToolInstance != null)
+                {
+                    Destroy(currentToolInstance);
+                    currentToolInstance = null;
+                }
                 return;
             }
 
@@ -2369,11 +2378,11 @@ namespace RTSokak.Network
             if (!IsAlive || InventoryTotal <= 0)
                 return;
 
-            var buildings = FindObjectsByType<Buildings.Building>(FindObjectsSortMode.None);
+            var buildings = Buildings.Building.AllBuildings;
             Buildings.Building nearestBuilding = null;
             float nearestDist = float.MaxValue;
 
-            for (int i = 0; i < buildings.Length; i++)
+            for (int i = 0; i < buildings.Count; i++)
             {
                 var b = buildings[i];
                 if (b == null || !b.IsComplete)
@@ -2633,6 +2642,19 @@ namespace RTSokak.Network
         [ClientRpc(includeOwner = true)]
         private void RpcPlayerToolSwing(float duration)
         {
+            if (currentToolInstance == null)
+            {
+                if (isSwordEquipped)
+                {
+                    TriggerSwordSwingAnimation();
+                    return;
+                }
+                else if (activeToolType < 0)
+                {
+                    CreateToolInstance(0);
+                }
+            }
+
             toolAnimDurationOverride = Mathf.Max(0.2f, duration);
             isAnimatingTool = true;
             toolAnimationStartTime = Time.time;

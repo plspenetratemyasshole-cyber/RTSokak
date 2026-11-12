@@ -181,6 +181,7 @@ namespace RTSokak.UI
                 return;
             }
 
+            UnitPlayerHud.Ensure();
             EnsureUnitPlayerController().AttachToUnit(unit);
         }
 

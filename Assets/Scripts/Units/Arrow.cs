@@ -283,19 +283,9 @@ namespace RTSokak.Network
                             DestroyArrow(true);
                             return;
                         }
-                        else
-                        {
-                            // Своё здание — стрела втыкается
-                            hasHit = true;
-                            DestroyArrow(false);
-                            return;
-                        }
                     }
 
-                    // Попадание в землю, дерево, руду или статическое препятствие
-                    hasHit = true;
-                    DestroyArrow(false);
-                    return;
+                    // Землю, деревья, руду и свои здания пропускаем в SphereCast (для них ниже точный Raycast)
                 }
             }
 
@@ -369,6 +359,25 @@ namespace RTSokak.Network
                         hasHit = true;
                         DestroyArrow(true);
                         return;
+                    }
+                }
+            }
+
+            // 4. Тонкий точный Raycast для препятствий окружения (земля, деревья, руда, здания)
+            if (Physics.Raycast(previousPosition, segDir, out RaycastHit envHit, seg, ~0, QueryTriggerInteraction.Ignore))
+            {
+                Collider envCol = envHit.collider;
+                if (envCol != null && !envCol.isTrigger)
+                {
+                    if (shooterUnit == null || (!envCol.transform.IsChildOf(shooterUnit.transform) && envCol.transform != shooterUnit.transform))
+                    {
+                        RTSUnit hitUnit = envCol.GetComponentInParent<RTSUnit>();
+                        if (hitUnit == null)
+                        {
+                            hasHit = true;
+                            DestroyArrow(false);
+                            return;
+                        }
                     }
                 }
             }

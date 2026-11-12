@@ -15,6 +15,30 @@ namespace RTSokak.UI
     {
         public static UnitPlayerHud Instance { get; private set; }
 
+        public static UnitPlayerHud Ensure()
+        {
+            if (Instance != null)
+            {
+                if (!Instance.gameObject.activeSelf)
+                    Instance.gameObject.SetActive(true);
+                return Instance;
+            }
+
+            var existing = Object.FindFirstObjectByType<UnitPlayerHud>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                Instance = existing;
+                return existing;
+            }
+
+            var go = new GameObject("UnitPlayerHudCanvas");
+            var hud = go.AddComponent<UnitPlayerHud>();
+            Instance = hud;
+            return hud;
+        }
+
         [Header("Roots")]
         [SerializeField] private GameObject hudRoot;
         [SerializeField] private GameObject crosshair;
@@ -275,8 +299,148 @@ namespace RTSokak.UI
             healthText.fontStyle = FontStyles.Bold;
             healthText.alignment = TextAlignmentOptions.Center;
             healthText.color = Color.white;
+            healthText.outlineWidth = 0.2f;
+            healthText.outlineColor = Color.black;
             healthText.raycastTarget = false;
             healthText.text = "HP: 100 / 100";
+        }
+
+        public void EnsureBaseHudUI()
+        {
+            // Canvas check on this or parent
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+                canvas = GetComponent<Canvas>();
+            if (canvas == null)
+            {
+                canvas = gameObject.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 90;
+            }
+            else
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                if (canvas.sortingOrder < 90)
+                    canvas.sortingOrder = 90;
+            }
+
+            CanvasScaler scaler = GetComponentInParent<CanvasScaler>();
+            if (scaler == null)
+                scaler = GetComponent<CanvasScaler>();
+            if (scaler == null)
+            {
+                scaler = gameObject.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+            }
+
+            GraphicRaycaster raycaster = GetComponentInParent<GraphicRaycaster>();
+            if (raycaster == null)
+                raycaster = GetComponent<GraphicRaycaster>();
+            if (raycaster == null)
+            {
+                gameObject.AddComponent<GraphicRaycaster>();
+            }
+
+            // IMPORTANT: hudRoot must never be this.gameObject!
+            if (hudRoot == null || hudRoot == gameObject)
+            {
+                Transform existingRoot = transform.Find("HudRoot");
+                if (existingRoot != null)
+                {
+                    hudRoot = existingRoot.gameObject;
+                }
+                else
+                {
+                    GameObject newRoot = new GameObject("HudRoot", typeof(RectTransform));
+                    newRoot.transform.SetParent(transform, false);
+                    RectTransform rt = newRoot.GetComponent<RectTransform>();
+                    rt.anchorMin = Vector2.zero;
+                    rt.anchorMax = Vector2.one;
+                    rt.offsetMin = Vector2.zero;
+                    rt.offsetMax = Vector2.zero;
+                    hudRoot = newRoot;
+                }
+            }
+
+            // Crosshair check
+            if (crosshair == null)
+            {
+                Transform existingCh = hudRoot.transform.Find("Crosshair");
+                if (existingCh != null)
+                {
+                    crosshair = existingCh.gameObject;
+                }
+                else
+                {
+                    GameObject chGo = new GameObject("Crosshair", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    chGo.transform.SetParent(hudRoot.transform, false);
+                    RectTransform rt = chGo.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = Vector2.zero;
+                    rt.sizeDelta = new Vector2(6f, 6f);
+
+                    Image img = chGo.GetComponent<Image>();
+                    img.sprite = GetWhiteSprite();
+                    img.color = Color.white;
+                    img.raycastTarget = false;
+                    crosshair = chGo;
+                }
+            }
+
+            // HotbarRoot check
+            if (hotbarRoot == null)
+            {
+                Transform existingHb = hudRoot.transform.Find("Hotbar");
+                if (existingHb != null)
+                {
+                    hotbarRoot = existingHb as RectTransform;
+                }
+                else
+                {
+                    GameObject hbGo = new GameObject("Hotbar", typeof(RectTransform));
+                    hbGo.transform.SetParent(hudRoot.transform, false);
+                    hotbarRoot = hbGo.GetComponent<RectTransform>();
+                    hotbarRoot.anchorMin = new Vector2(0.5f, 0f);
+                    hotbarRoot.anchorMax = new Vector2(0.5f, 0f);
+                    hotbarRoot.pivot = new Vector2(0.5f, 0f);
+                    hotbarRoot.anchoredPosition = new Vector2(0f, 22f);
+                    hotbarRoot.sizeDelta = new Vector2(300f, 64f);
+                }
+            }
+
+            // ResourcesText check
+            if (resourcesText == null)
+            {
+                Transform existingRes = hudRoot.transform.Find("ResourcesText");
+                if (existingRes != null)
+                {
+                    resourcesText = existingRes.GetComponent<TextMeshProUGUI>();
+                }
+                else
+                {
+                    GameObject resGo = new GameObject("ResourcesText", typeof(RectTransform), typeof(TextMeshProUGUI));
+                    resGo.transform.SetParent(hudRoot.transform, false);
+                    RectTransform rt = resGo.GetComponent<RectTransform>();
+                    rt.anchorMin = new Vector2(0.5f, 0f);
+                    rt.anchorMax = new Vector2(0.5f, 0f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = new Vector2(0f, 132f);
+                    rt.sizeDelta = new Vector2(420f, 32f);
+
+                    resourcesText = resGo.GetComponent<TextMeshProUGUI>();
+                    resourcesText.fontSize = 18;
+                    resourcesText.fontStyle = FontStyles.Bold;
+                    resourcesText.alignment = TextAlignmentOptions.Center;
+                    resourcesText.color = Color.white;
+                    resourcesText.outlineWidth = 0.2f;
+                    resourcesText.outlineColor = Color.black;
+                    resourcesText.raycastTarget = false;
+                    resourcesText.text = "Wood 0   Ore 0   Food 0";
+                }
+            }
         }
 
         private void Awake()
@@ -287,6 +451,7 @@ namespace RTSokak.UI
                 return;
             }
             Instance = this;
+            EnsureBaseHudUI();
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
             EnsureHitmarkerUI();
@@ -343,8 +508,10 @@ namespace RTSokak.UI
             selectedSlot = -1;
             currentTools = BuildToolList(unit);
             RebuildHotbar();
-            if (RTSPlayer.localPlayer != null)
-                RTSPlayer.localPlayer.CmdUnitPlayerSelectHotbar(-1);
+            if (currentTools.Length > 0)
+                SelectSlot(0);
+            else
+                SelectSlot(-1);
         }
 
         public static string[] BuildToolList(RTSUnit unit)
@@ -1012,6 +1179,7 @@ namespace RTSokak.UI
 
         private void Show()
         {
+            EnsureBaseHudUI();
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
             EnsureHitmarkerUI();

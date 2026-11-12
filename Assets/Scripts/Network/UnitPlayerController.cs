@@ -216,6 +216,7 @@ namespace RTSokak.Network
         public void AttachToUnit(RTSUnit unit)
         {
             Detach();
+            RTSokak.UI.UnitPlayerHud.Ensure();
             knockbackVelocity = Vector3.zero;
             knockbackUngroundTimer = 0f;
             if (unit == null)
@@ -492,14 +493,27 @@ namespace RTSokak.Network
                 if (destLayer == null)
                     destLayer = fpsCamera.gameObject.AddComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
 
-                destLayer.volumeLayer = srcLayer.volumeLayer;
-                destLayer.volumeTrigger = fpsCamera.transform;
-                destLayer.antialiasingMode = srcLayer.antialiasingMode != UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.None
-                    ? srcLayer.antialiasingMode
-                    : UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
-                destLayer.stopNaNPropagation = srcLayer.stopNaNPropagation;
-                destLayer.finalBlitToCameraTarget = srcLayer.finalBlitToCameraTarget;
-                destLayer.enabled = true;
+                var resField = typeof(UnityEngine.Rendering.PostProcessing.PostProcessLayer).GetField("m_Resources", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var resources = resField != null ? resField.GetValue(srcLayer) as UnityEngine.Rendering.PostProcessing.PostProcessResources : null;
+
+                if (resources != null)
+                {
+                    destLayer.Init(resources);
+                    resField.SetValue(destLayer, resources);
+                    destLayer.volumeLayer = srcLayer.volumeLayer;
+                    destLayer.volumeTrigger = fpsCamera.transform;
+                    destLayer.antialiasingMode = srcLayer.antialiasingMode != UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.None
+                        ? srcLayer.antialiasingMode
+                        : UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
+                    destLayer.stopNaNPropagation = srcLayer.stopNaNPropagation;
+                    destLayer.finalBlitToCameraTarget = srcLayer.finalBlitToCameraTarget;
+                    destLayer.enabled = true;
+                }
+                else
+                {
+                    destLayer.enabled = false;
+                    Destroy(destLayer);
+                }
             }
         }
 
@@ -612,7 +626,7 @@ namespace RTSokak.Network
 
             if (Time.time >= nextOutlineRefreshTime)
             {
-                nextOutlineRefreshTime = Time.time + 0.5f;
+                nextOutlineRefreshTime = Time.time + 2.0f;
                 RefreshFactionOutlines();
             }
 
@@ -1191,10 +1205,21 @@ namespace RTSokak.Network
 
         public static void RefreshFactionOutlines()
         {
-            foreach (var u in Object.FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
-                u?.ForceUpdateOutline();
-            foreach (var b in Object.FindObjectsByType<RTSokak.Buildings.Building>(FindObjectsSortMode.None))
-                b?.ForceUpdateOutline();
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
+            {
+                var u = units[i];
+                if (u != null)
+                    u.ForceUpdateOutline();
+            }
+
+            var buildings = RTSokak.Buildings.Building.AllBuildings;
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                var b = buildings[i];
+                if (b != null)
+                    b.ForceUpdateOutline();
+            }
         }
     }
 }
