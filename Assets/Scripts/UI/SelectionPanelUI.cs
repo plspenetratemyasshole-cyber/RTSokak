@@ -13,6 +13,7 @@ namespace RTSokak.UI
     /// </summary>
     public class SelectionPanelUI : MonoBehaviour
     {
+        public static SelectionPanelUI Instance { get; private set; }
         [Header("Root")]
         [Tooltip("Визуальный корень (Image). Если пусто — этот объект. Не выключает GameObject со скриптом.")]
         [SerializeField] private GameObject panelRoot;
@@ -83,6 +84,7 @@ namespace RTSokak.UI
 
         private void Awake()
         {
+            Instance = this;
             EnsureSelectionManager();
             EnsureCanvasGroup();
             SetPanelVisible(false);
@@ -216,6 +218,8 @@ namespace RTSokak.UI
 
         private void OnDestroy()
         {
+            if (Instance == this)
+                Instance = null;
             if (selectionManager != null)
                 selectionManager.OnSelectionChanged -= Refresh;
             UnsubscribeProduction();
@@ -932,6 +936,8 @@ namespace RTSokak.UI
             }
 
             ClearPreview();
+            BuildingManager.Instance?.CancelCheatPlacement();
+            DebugCheatUI.Instance?.CancelUnitSpawnMode();
             pendingBuildType = type;
             pendingBuildDef = def;
             previewHeight = def.previewHeight;
@@ -1052,7 +1058,7 @@ namespace RTSokak.UI
             ClearPreview();
         }
 
-        private void ClearPreview()
+        public void ClearPreview()
         {
             pendingBuildType = null;
             pendingBuildDef = null;

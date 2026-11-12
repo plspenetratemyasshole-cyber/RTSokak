@@ -454,6 +454,58 @@ namespace RTSokak.Buildings
         }
 
         [Server]
+        public void ServerInitializeInstantComplete(
+            int ownerConnId,
+            int ownerPIndex,
+            string ownerNick,
+            BuildingDefinition def,
+            Vector3 finishedWorldPos,
+            Vector2Int origin,
+            Vector2Int size)
+        {
+            ownerConnectionId = ownerConnId;
+            ownerPlayerIndex = ownerPIndex >= 0 ? ownerPIndex : ResolvePlayerIndex(ownerConnId);
+            ownerNickname = !string.IsNullOrEmpty(ownerNick) ? ownerNick : ResolvePlayerNickname(ownerConnId);
+            buildingType = def.type;
+            buildDuration = Mathf.Max(0.1f, def.buildDuration);
+            buryDepth = def.buryDepth;
+            populationProvided = def.populationProvided;
+            spentWood = 0;
+            spentOre = 0;
+            spentFood = 0;
+            finalPosition = finishedWorldPos;
+            gridOriginX = origin.x;
+            gridOriginZ = origin.y;
+            gridSizeX = Mathf.Max(1, size.x);
+            gridSizeZ = Mathf.Max(1, size.y);
+            buildProgress = 1f;
+            isComplete = true;
+            populationGranted = true;
+
+            maxHealth = ResolveMaxHealthFromDefinition(def);
+            currentHealth = maxHealth;
+
+            transform.position = finishedWorldPos;
+
+            if (BuildingManager.Instance != null)
+                BuildingManager.Instance.RegisterBuilding(this, GridOrigin, GridSize);
+
+            var player = FindPlayer(ownerConnectionId);
+            if (player == null && !string.IsNullOrEmpty(ownerNickname))
+                player = FindPlayerByNickname(ownerNickname);
+
+            if (player != null)
+            {
+                if (populationProvided > 0)
+                    player.AddMaxPopulation(populationProvided);
+                if (buildingType == BuildingType.Capital)
+                    player.NotifyCapitalBuilt();
+            }
+
+            OnConstructionFinished?.Invoke(this);
+        }
+
+        [Server]
         public void ServerSetOwnerConnectionId(int connId) => ownerConnectionId = connId;
 
         [Server]

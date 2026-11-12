@@ -3846,6 +3846,12 @@ MonoBehaviour:
   fovOutlineColor: {r: 0.25, g: 1, b: 0.35, a: 1}
   fovLineThickness: 1
   groundPlaneY: 0
+  playerFovColor: {r: 1, g: 0.92, b: 0.016, a: 1}
+  playerFovLineThickness: 2
+  playerFovLength: 110
+  playerFovAngle: 75
+  playerMarkerColor: {r: 1, g: 0.92, b: 0.016, a: 1}
+  playerMarkerSize: 10
   clickToTeleport: 1
   mapImage: {fileID: 0}
   borderImage: {fileID: 0}
@@ -6375,6 +6381,7 @@ MonoBehaviour:
     foodCost: 0
     populationProvided: 0
     maxHealth: 1500
+  enableCheats: 1
 --- !u!4 &1569982618
 Transform:
   m_ObjectHideFlags: 0
@@ -8141,6 +8148,9 @@ MonoBehaviour:
   crosshair: {fileID: 1332382549}
   hotbarRoot: {fileID: 1470872380}
   resourcesText: {fileID: 773010951}
+  healthBarRoot: {fileID: 0}
+  healthFillImage: {fileID: 0}
+  healthText: {fileID: 0}
   slotNormal: {r: 0.15, g: 0.16, b: 0.2, a: 0.9}
   slotSelected: {r: 0.15, g: 0.65, b: 0.25, a: 0.95}
   slotSize: 56

@@ -22,6 +22,10 @@ namespace RTSokak.Network
         [Header("Resource System")]
         [SerializeField] private bool autoGenerateResources = true;
 
+        [Header("Debug / Cheats")]
+        [SerializeField] private bool enableCheats = false;
+        public bool EnableCheats => enableCheats;
+
         [Header("Discovery")]
         [SerializeField] RTSNetworkDiscovery networkDiscovery;
 

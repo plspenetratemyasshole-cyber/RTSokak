@@ -50,6 +50,19 @@ namespace RTSokak.Network
         [SyncVar(hook = nameof(OnMaxPopulationChanged))]
         private int maxPopulation;
 
+        [Header("Debug / Cheats")]
+        [SyncVar(hook = nameof(OnCheatsEnabledChanged))]
+        private bool cheatsEnabledOnServer;
+        public bool CheatsEnabled => cheatsEnabledOnServer;
+
+        private void OnCheatsEnabledChanged(bool oldVal, bool newVal)
+        {
+            if (isLocalPlayer && newVal)
+            {
+                RTSokak.UI.DebugCheatUI.EnsureExists();
+            }
+        }
+
         [SyncVar]
         private bool hasCapital;
 
@@ -110,6 +123,23 @@ namespace RTSokak.Network
             maxPopulation = 0;
             // currentPopulation выставляется при спавне воркеров
 
+            bool cheats = false;
+            if (RTSNetworkManager.Singleton != null && RTSNetworkManager.Singleton.EnableCheats)
+                cheats = true;
+            else if (NetworkManager.singleton is RTSNetworkManager rtsNm && rtsNm.EnableCheats)
+                cheats = true;
+            else if (BuildingManager.Instance != null && BuildingManager.Instance.EnableCheats)
+                cheats = true;
+            else
+            {
+                var bm = Object.FindFirstObjectByType<BuildingManager>();
+                if (bm != null && bm.EnableCheats)
+                    cheats = true;
+            }
+            cheatsEnabledOnServer = cheats;
+            if (cheats)
+                UnityEngine.Debug.Log($"[RTSPlayer SERVER] Cheats enabled on server for conn={connectionToClient?.connectionId}");
+
             // Хост: сразу проставить nickname из локальной сессии (до CmdRegisterClient),
             // чтобы restore по сейву мог сопоставить игрока.
             if (connectionToClient != null && NetworkServer.localConnection == connectionToClient)
@@ -130,6 +160,8 @@ namespace RTSokak.Network
                 localPlayer = this;
                 NotifyStatsChanged();
                 RefreshAllUnitOutlines();
+                if (cheatsEnabledOnServer)
+                    RTSokak.UI.DebugCheatUI.EnsureExists();
             }
         }
         
@@ -147,6 +179,8 @@ namespace RTSokak.Network
                 UnityEngine.Debug.Log($"[RTSPlayer CLIENT] OnStartClient - calling CmdRegisterClient with nickname='{nick}', email='{email}'");
                 CmdRegisterClient(nick, email);
                 RefreshAllUnitOutlines();
+                if (cheatsEnabledOnServer)
+                    RTSokak.UI.DebugCheatUI.EnsureExists();
             }
         }
         
@@ -1240,5 +1274,137 @@ namespace RTSokak.Network
 
             UnityEngine.Debug.Log($"[RTSPlayer] Placed {type} at {finalPos} grid={origin} size={def.Size}, worker={worker.name}");
         }
+
+        #region Debug / Cheats Commands
+
+        [Command(requiresAuthority = false)]
+        public void CmdCheatAddResources(int woodDelta, int oreDelta, int foodDelta, NetworkConnectionToClient sender = null)
+        {
+            if (!CheatsEnabled || playerRole != PlayerRole.MayorPlaying) return;
+            if (sender != null && connectionToClient != null && sender != connectionToClient) return;
+
+            AddWood(woodDelta);
+            AddOre(oreDelta);
+            AddFood(foodDelta);
+            UnityEngine.Debug.Log($"[RTSPlayer] Cheat added resources (+{woodDelta} wood, +{oreDelta} ore, +{foodDelta} food) for conn={connectionToClient?.connectionId}");
+        }
+
+        [Command(requiresAuthority = false)]
+        public void CmdCheatSpawnUnit(string unitKind, Vector3 worldPos, NetworkConnectionToClient sender = null)
+        {
+            if (!CheatsEnabled || playerRole != PlayerRole.MayorPlaying) return;
+            if (sender != null && connectionToClient != null && sender != connectionToClient) return;
+
+            var nm = NetworkManager.singleton as RTSNetworkManager;
+            if (nm == null) nm = RTSNetworkManager.Singleton;
+            if (nm == null)
+            {
+                UnityEngine.Debug.LogError("[RTSPlayer] RTSNetworkManager not found");
+                return;
+            }
+
+            GameObject prefab = null;
+            if (string.Equals(unitKind, "Worker", System.StringComparison.OrdinalIgnoreCase))
+                prefab = nm.WorkerPrefab;
+            else if (string.Equals(unitKind, "Warrior", System.StringComparison.OrdinalIgnoreCase))
+                prefab = nm.WarriorPrefab;
+            else if (string.Equals(unitKind, "Archer", System.StringComparison.OrdinalIgnoreCase))
+                prefab = nm.ArcherPrefab;
+
+            if (prefab == null)
+            {
+                UnityEngine.Debug.LogWarning($"[RTSPlayer] CmdCheatSpawnUnit: Unknown unit kind or null prefab '{unitKind}'");
+                return;
+            }
+
+            Vector3 spawnPos = worldPos;
+            if (UnityEngine.AI.NavMesh.SamplePosition(worldPos, out UnityEngine.AI.NavMeshHit navHit, 5f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                spawnPos = navHit.position;
+            }
+
+            GameObject unitObj = Instantiate(prefab, spawnPos, Quaternion.identity);
+            NetworkServer.Spawn(unitObj);
+
+            RTSUnit unit = unitObj.GetComponent<RTSUnit>();
+            if (unit != null)
+            {
+                NetworkConnectionToClient conn = connectionToClient ?? NetworkServer.localConnection;
+                if (conn != null)
+                    unit.SetOwner(conn);
+                if (playerIndex >= 0) unit.ServerSetOwnerPlayerIndex(playerIndex);
+                if (!string.IsNullOrEmpty(nickname)) unit.ServerSetOwnerNickname(nickname);
+                AddCurrentPopulation(1);
+            }
+
+            UnityEngine.Debug.Log($"[RTSPlayer] Cheat spawned {unitKind} at {spawnPos} for conn={connectionToClient?.connectionId}");
+        }
+
+        [Command(requiresAuthority = false)]
+        public void CmdCheatPlaceBuildingInstant(BuildingType type, Vector3 worldPos, NetworkConnectionToClient sender = null)
+        {
+            if (!CheatsEnabled || playerRole != PlayerRole.MayorPlaying) return;
+            if (sender != null && connectionToClient != null && sender != connectionToClient) return;
+
+            var manager = BuildingManager.Instance;
+            if (manager == null)
+            {
+                UnityEngine.Debug.LogError("[RTSPlayer] BuildingManager missing on server");
+                return;
+            }
+
+            BuildingDefinition def = manager.GetDefinition(type);
+            if (def == null || def.prefab == null)
+            {
+                UnityEngine.Debug.LogWarning($"[RTSPlayer] CmdCheatPlaceBuildingInstant: No definition/prefab for {type}");
+                return;
+            }
+
+            if (type == BuildingType.Capital && HasCapitalBuilding())
+            {
+                UnityEngine.Debug.LogWarning("[RTSPlayer] CmdCheatPlaceBuildingInstant: Capital already exists");
+                return;
+            }
+
+            if (!manager.TrySnapPlacement(worldPos, def, out Vector2Int origin, out Vector3 snappedCenter, out string placeReason))
+            {
+                UnityEngine.Debug.LogWarning($"[RTSPlayer] CmdCheatPlaceBuildingInstant: Cannot place: {placeReason}");
+                return;
+            }
+
+            Vector3 finalPos = snappedCenter;
+            finalPos.y = 0f;
+
+            GameObject obj = Instantiate(def.prefab, finalPos, Quaternion.identity);
+            Building building = obj.GetComponent<Building>();
+            if (building == null)
+                building = obj.AddComponent<Building>();
+
+            if (type == BuildingType.GardenBed && obj.GetComponent<GardenBed>() == null)
+                obj.AddComponent<GardenBed>();
+
+            if (type == BuildingType.Capital && obj.GetComponent<CapitalProduction>() == null)
+                obj.AddComponent<CapitalProduction>();
+
+            if (type == BuildingType.Barracks && obj.GetComponent<BarracksProduction>() == null)
+                obj.AddComponent<BarracksProduction>();
+
+            if (obj.GetComponent<NetworkIdentity>() == null)
+                obj.AddComponent<NetworkIdentity>();
+
+            NetworkServer.Spawn(obj);
+
+            building.ServerInitializeInstantComplete(
+                connectionId, playerIndex, nickname,
+                def, finalPos, origin, def.Size);
+
+            var dynNav = Object.FindFirstObjectByType<RTSokak.Navigation.DynamicNavMeshManager>();
+            if (dynNav != null)
+                dynNav.MarkDirty();
+
+            UnityEngine.Debug.Log($"[RTSPlayer] Cheat instant placed {type} at {finalPos} grid={origin} size={def.Size}");
+        }
+
+        #endregion
     }
 }
