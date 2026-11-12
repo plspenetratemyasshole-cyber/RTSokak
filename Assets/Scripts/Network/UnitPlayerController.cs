@@ -110,6 +110,13 @@ namespace RTSokak.Network
         private Vector3 knockbackVelocity;
         private float knockbackUngroundTimer;
 
+        // Head-bob & sprint FOV
+        private float headBobTimer;
+        private float currentBobX;
+        private float currentBobY;
+        private bool isCurrentlySprinting;
+        private bool isCurrentlyMovingHoriz;
+
         public void ApplyKnockback(Vector3 impulse)
         {
             knockbackVelocity = new Vector3(impulse.x, 0f, impulse.z) * 2.4f;
@@ -241,7 +248,8 @@ namespace RTSokak.Network
             fpsCamera.orthographic = false;
             fpsCamera.fieldOfView = 75f;
             fpsCamera.nearClipPlane = 0.05f;
-            fpsCamera.allowHDR = false;
+            fpsCamera.allowHDR = true;
+            SyncPostProcessingToFpsCamera();
             if (enableUnitFog)
                 fpsCamera.depthTextureMode |= DepthTextureMode.Depth;
             else
@@ -397,8 +405,15 @@ namespace RTSokak.Network
                 screenFog = null;
             }
 
+            headBobTimer = 0f;
+            currentBobX = 0f;
+            currentBobY = 0f;
+            isCurrentlySprinting = false;
+            isCurrentlyMovingHoriz = false;
+
             if (fpsCamera != null)
             {
+                fpsCamera.fieldOfView = 75f;
                 fpsCamera.farClipPlane = savedFarClip > 1f ? savedFarClip : 400f;
                 fpsCamera.clearFlags = savedClearFlags;
                 fpsCamera.enabled = false;
@@ -447,8 +462,45 @@ namespace RTSokak.Network
             fpsCamera.farClipPlane = 1000f;
             fpsCamera.clearFlags = CameraClearFlags.Skybox;
             fpsCamera.renderingPath = RenderingPath.Forward;
+            fpsCamera.allowHDR = true;
             go.tag = "MainCamera";
             fpsCamera.enabled = false;
+            SyncPostProcessingToFpsCamera();
+        }
+
+        private void SyncPostProcessingToFpsCamera()
+        {
+            if (fpsCamera == null)
+                return;
+
+            fpsCamera.allowHDR = true;
+
+            var rtsCam = Object.FindFirstObjectByType<RTSokak.Camera.RTSCameraController>();
+            UnityEngine.Rendering.PostProcessing.PostProcessLayer srcLayer = null;
+            if (rtsCam != null)
+            {
+                srcLayer = rtsCam.GetComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+                if (srcLayer == null)
+                    srcLayer = rtsCam.GetComponentInChildren<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+            }
+            if (srcLayer == null)
+                srcLayer = Object.FindFirstObjectByType<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+
+            if (srcLayer != null)
+            {
+                var destLayer = fpsCamera.GetComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+                if (destLayer == null)
+                    destLayer = fpsCamera.gameObject.AddComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+
+                destLayer.volumeLayer = srcLayer.volumeLayer;
+                destLayer.volumeTrigger = fpsCamera.transform;
+                destLayer.antialiasingMode = srcLayer.antialiasingMode != UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.None
+                    ? srcLayer.antialiasingMode
+                    : UnityEngine.Rendering.PostProcessing.PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
+                destLayer.stopNaNPropagation = srcLayer.stopNaNPropagation;
+                destLayer.finalBlitToCameraTarget = srcLayer.finalBlitToCameraTarget;
+                destLayer.enabled = true;
+            }
         }
 
         private void ApplyFogCameraClip()
@@ -526,8 +578,19 @@ namespace RTSokak.Network
             Vector3 targetCamPos = cameraAnchor != null
                 ? cameraAnchor.position
                 : controlledUnit.transform.position + Vector3.up * 1.6f;
-            cameraRig.position = targetCamPos;
+
+            // Мягкий head-bob камеры
+            Vector3 bobOffset = cameraRig.rotation * new Vector3(currentBobX, currentBobY, 0f);
+            cameraRig.position = targetCamPos + bobOffset;
             cameraRig.rotation = Quaternion.Euler(pitch, yaw, 0f);
+
+            // Плавное увеличение FOV при спринте (75 -> 81)
+            if (fpsCamera != null)
+            {
+                float targetFov = (isCurrentlySprinting && isCurrentlyMovingHoriz && grounded) ? 81f : 75f;
+                fpsCamera.fieldOfView = Mathf.Lerp(fpsCamera.fieldOfView, targetFov, Time.deltaTime * 8f);
+            }
+
             EnforceHiddenObjects();
         }
 
@@ -561,6 +624,9 @@ namespace RTSokak.Network
 
             if (Input.GetMouseButtonDown(0))
                 TryPrimaryAction();
+
+            if (Input.GetKeyDown(KeyCode.F))
+                TryInteractGarden();
 
             if (Input.GetKeyDown(KeyCode.F6))
                 CycleCullDistancePreset();
@@ -632,6 +698,25 @@ namespace RTSokak.Network
             float standOffset = GetStandOffset();
 
             bool isMovingHoriz = wish.sqrMagnitude > 1e-7f;
+            isCurrentlyMovingHoriz = isMovingHoriz;
+            isCurrentlySprinting = sprint;
+
+            if (grounded && isMovingHoriz)
+            {
+                float bobSpeed = sprint ? 13.5f : 9.0f;
+                headBobTimer += Time.deltaTime * bobSpeed;
+                float bobAmp = sprint ? 0.06f : 0.035f;
+                float targetBobY = Mathf.Sin(headBobTimer) * bobAmp;
+                float targetBobX = Mathf.Cos(headBobTimer * 0.5f) * (bobAmp * 0.45f);
+                currentBobX = Mathf.MoveTowards(currentBobX, targetBobX, Time.deltaTime * 0.8f);
+                currentBobY = Mathf.MoveTowards(currentBobY, targetBobY, Time.deltaTime * 0.8f);
+            }
+            else
+            {
+                currentBobX = Mathf.MoveTowards(currentBobX, 0f, Time.deltaTime * 0.15f);
+                currentBobY = Mathf.MoveTowards(currentBobY, 0f, Time.deltaTime * 0.15f);
+            }
+
             if (!hasCachedGround || isMovingHoriz || Time.time >= nextGroundSampleTime)
             {
                 if (TryGetGroundSurfaceY(before, out float sy))
@@ -927,6 +1012,60 @@ namespace RTSokak.Network
 
             Ray ray = fpsCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             RTSPlayer.localPlayer.CmdUnitPlayerPrimary(controlledUnit.netId, ray.origin, ray.direction);
+        }
+
+        private void TryInteractGarden()
+        {
+            if (controlledUnit == null || !(controlledUnit is Worker worker) || !worker.IsAlive)
+                return;
+            if (RTSPlayer.localPlayer == null)
+                return;
+
+            Vector3 camForward = fpsCamera != null ? fpsCamera.transform.forward : controlledUnit.transform.forward;
+            Vector3 lookDir = new Vector3(camForward.x, 0f, camForward.z);
+            if (lookDir.sqrMagnitude > 0.001f)
+                lookDir.Normalize();
+            else
+                lookDir = controlledUnit.transform.forward;
+
+            var buildings = Buildings.Building.AllBuildings;
+            Buildings.GardenBed bestGarden = null;
+            int bestPlot = -1;
+            float bestDist = float.MaxValue;
+
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                var b = buildings[i];
+                if (b == null || !b.IsComplete || !b.IsOwnedByLocalPlayer())
+                    continue;
+
+                var garden = b.GetComponent<Buildings.GardenBed>();
+                if (garden == null)
+                    continue;
+
+                float dist = Vector3.Distance(controlledUnit.transform.position, garden.transform.position);
+                if (dist > 8f)
+                    continue;
+
+                if (garden.TryFindPlayerInteractablePlot(controlledUnit.transform.position, lookDir, 2.6f, out int plot, out Buildings.GardenPlotState s, out _))
+                {
+                    if (s == Buildings.GardenPlotState.Ready || s == Buildings.GardenPlotState.Empty)
+                    {
+                        if (dist < bestDist)
+                        {
+                            bestDist = dist;
+                            bestGarden = garden;
+                            bestPlot = plot;
+                        }
+                    }
+                }
+            }
+
+            if (bestGarden != null && bestPlot >= 0)
+            {
+                RTSPlayer.localPlayer.CmdUnitPlayerInteractGarden(controlledUnit.netId, bestGarden.netId, bestPlot);
+                UnitPlayerHud.Instance?.TriggerGardenPromptPunch();
+            }
         }
 
         private void HideLocalMeshes(RTSUnit unit)

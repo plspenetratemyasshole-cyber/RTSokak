@@ -265,10 +265,18 @@ namespace RTSokak.UI
             if (cachedCanvas == null)
                 cachedCanvas = GetComponent<Canvas>();
 
+            // Скрываем собственную полоску HP у локального управляемого юнита
+            var upc = RTSokak.Network.UnitPlayerController.Instance;
+            if (upc != null && upc.IsActive && upc.ControlledUnit != null && targetTransform == upc.ControlledUnit.transform)
+            {
+                if (cachedCanvas != null && cachedCanvas.enabled)
+                    cachedCanvas.enabled = false;
+                return;
+            }
+
             mainCamera = ResolveBillboardCamera(mainCamera);
 
             // FPS: бары за дистанцией culling скрываем, не крутим каждый кадр
-            var upc = RTSokak.Network.UnitPlayerController.Instance;
             if (upc != null && upc.IsActive && mainCamera != null)
             {
                 Vector3 p = useFixedWorldPosition ? fixedWorldPosition

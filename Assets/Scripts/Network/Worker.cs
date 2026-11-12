@@ -2642,5 +2642,49 @@ namespace RTSokak.Network
             if (currentToolInstance == null && activeToolType >= 0)
                 CreateToolInstance(activeToolType);
         }
+
+        [Server]
+        public void ServerPlayerInteractGardenPlot(RTSokak.Buildings.GardenBed garden, int plotIndex)
+        {
+            if (garden == null || !IsAlive)
+                return;
+
+            RTSokak.Buildings.GardenPlotState state = garden.GetPlotState(plotIndex);
+            Vector3 plotPos = garden.GetPlotWorldPosition(plotIndex);
+
+            if (state == RTSokak.Buildings.GardenPlotState.Ready)
+            {
+                if (!IsInventoryFull)
+                {
+                    int gained = garden.ServerHarvestAndReplant(plotIndex);
+                    if (gained > 0)
+                    {
+                        AddToInventory(RTSokak.Resources.ResourceType.Food, gained);
+                        RpcShowHarvestFloatingText(plotPos + Vector3.up * 0.8f, RTSokak.Resources.ResourceType.Food, gained);
+                        RpcPlayerToolSwing(0.35f);
+                    }
+                }
+            }
+            else if (state == RTSokak.Buildings.GardenPlotState.Empty)
+            {
+                if (garden.ServerPlant(plotIndex))
+                {
+                    RpcPlayerToolSwing(0.35f);
+                    RpcShowPlantedFloatingText(plotPos + Vector3.up * 0.8f);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void RpcShowPlantedFloatingText(Vector3 worldPos)
+        {
+            if (!IsOwned)
+                return;
+
+            if (RTSokak.UI.FloatingTextManager.Instance != null)
+            {
+                RTSokak.UI.FloatingTextManager.Instance.ShowCustomWorldText(worldPos, "Посажено!", new Color(0.35f, 1f, 0.45f, 1f));
+            }
+        }
     }
 }

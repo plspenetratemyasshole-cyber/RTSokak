@@ -62,6 +62,13 @@ namespace RTSokak.UI
                 return;
 
             var upc = RTSokak.Network.UnitPlayerController.Instance;
+            if (upc != null && upc.IsActive && upc.ControlledUnit != null && targetUnit == upc.ControlledUnit.transform)
+            {
+                if (canvas != null && canvas.enabled)
+                    canvas.enabled = false;
+                return;
+            }
+
             if (upc != null && upc.IsActive)
             {
                 bool culled = upc.ShouldCullHealthBar(targetUnit.position, false);

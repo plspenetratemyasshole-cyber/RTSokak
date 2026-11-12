@@ -883,6 +883,35 @@ namespace RTSokak.Network
             unit.ServerPlayerPrimaryAction(rayOrigin, rayDir);
         }
 
+        /// <summary>Взаимодействие юнита-игрока (Worker) с грядкой (GardenBed) на клавишу F.</summary>
+        [Command(requiresAuthority = false)]
+        public void CmdUnitPlayerInteractGarden(uint unitNetId, uint gardenNetId, int plotIndex)
+        {
+            if (playerRole != PlayerRole.UnitPlaying || controlledUnitNetId != unitNetId)
+                return;
+            if (!NetworkServer.spawned.TryGetValue(unitNetId, out NetworkIdentity unitIdentity))
+                return;
+            if (!NetworkServer.spawned.TryGetValue(gardenNetId, out NetworkIdentity gardenIdentity))
+                return;
+
+            Worker worker = unitIdentity.GetComponent<Worker>();
+            Buildings.GardenBed garden = gardenIdentity.GetComponent<Buildings.GardenBed>();
+            Buildings.Building building = gardenIdentity.GetComponent<Buildings.Building>();
+
+            if (worker == null || garden == null || building == null)
+                return;
+            if (worker.ControllerPlayerNetId != netId)
+                return;
+            if (!building.IsSameOwner(worker.OwnerNickname, worker.OwnerPlayerIndex, worker.OwnerConnectionId))
+                return;
+
+            Vector3 plotPos = garden.GetPlotWorldPosition(plotIndex);
+            if (Vector3.Distance(worker.transform.position, plotPos) > 4.2f)
+                return;
+
+            worker.ServerPlayerInteractGardenPlot(garden, plotIndex);
+        }
+
         /// <summary>Мэр даёт жёлтую подсказку юниту-игроку (не pathfinding).</summary>
         [Command(requiresAuthority = false)]
         public void CmdMayorHintUnitPlayer(uint unitNetId, Vector3 worldPoint)

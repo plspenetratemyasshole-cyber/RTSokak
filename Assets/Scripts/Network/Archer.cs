@@ -328,61 +328,19 @@ namespace RTSokak.Network
                 return;
 
             rayDir = rayDir.normalized;
-            Vector3 spawnPos = rayOrigin + rayDir * 0.65f;
-            Vector3 aimPoint = rayOrigin + rayDir * (shootRange * 2f);
-            uint targetId = 0;
-
-            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, rayDir, shootRange * 2f, ~0, QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            RaycastHit validHit = default;
-            bool foundHit = false;
-            for (int i = 0; i < hits.Length; i++)
-            {
-                var col = hits[i].collider;
-                if (col == null) continue;
-                if (col.transform.IsChildOf(transform) || col.transform == transform)
-                    continue;
-
-                validHit = hits[i];
-                foundHit = true;
-                break;
-            }
-
-            if (foundHit)
-            {
-                aimPoint = validHit.point;
-                RTSUnit enemy = validHit.collider.GetComponentInParent<RTSUnit>();
-                if (enemy != null && enemy.IsAlive && !IsSameOwnerAs(enemy))
-                {
-                    targetId = enemy.netId;
-                }
-                else
-                {
-                    Buildings.Building building = validHit.collider.GetComponentInParent<Buildings.Building>();
-                    if (building != null && building.CurrentHealth > 0 &&
-                        building.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
-                    {
-                        NetworkIdentity bi = building.GetComponent<NetworkIdentity>();
-                        targetId = bi != null ? bi.netId : 0;
-                    }
-                }
-            }
-
-            float distance = Vector3.Distance(spawnPos, aimPoint);
-            float hitTime = distance / arrowSpeed;
+            Vector3 spawnPos = rayOrigin + rayDir * 0.55f;
+            float maxFlight = shootRange * 2.5f;
             nextShootTime = Time.time + shootCooldown;
 
-            GameObject arrowObj = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
+            GameObject arrowObj = Instantiate(arrowPrefab, spawnPos, Quaternion.LookRotation(rayDir));
             Arrow arrow = arrowObj.GetComponent<Arrow>();
             if (arrow != null)
             {
-                arrow.SetShooter(this);
-                Vector3 shootDir = (aimPoint - spawnPos).normalized;
-                arrow.Initialize(spawnPos, aimPoint, hitTime, targetId, arrowDamage, shootDir, shootRange * 2.5f);
+                arrow.InitializeFromPlayerRay(spawnPos, rayDir, arrowDamage, maxFlight, this);
             }
             NetworkServer.Spawn(arrowObj);
-            RpcShootVisual(aimPoint);
+
+            RpcShootVisual(spawnPos + rayDir * maxFlight);
         }
 
         [Server]

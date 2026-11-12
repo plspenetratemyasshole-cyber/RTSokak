@@ -80,6 +80,31 @@ namespace RTSokak.Network
             Initialize(start, target, hitTime, netId, dmg, kbDir, maxFlightOverride: -1f, shooter: null);
         }
 
+        [Server]
+        public void InitializeFromPlayerRay(Vector3 origin, Vector3 direction, int dmg, float maxDist, RTSUnit shooter)
+        {
+            if (shooter != null)
+                SetShooter(shooter);
+
+            flightDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
+            startPosition = origin;
+            targetPosition = origin + flightDirection * maxDist;
+            maxFlightDistance = maxDist;
+            arrowDamage = dmg;
+            targetNetId = 0;
+            predictedHitTime = maxDist / speed;
+
+            Vector3 flatKb = new Vector3(flightDirection.x, 0f, flightDirection.z);
+            knockbackDir = flatKb.sqrMagnitude > 0.001f ? flatKb.normalized : flightDirection;
+
+            transform.position = startPosition;
+            previousPosition = startPosition;
+            velocity = flightDirection * speed;
+            transform.rotation = Quaternion.LookRotation(flightDirection);
+            flightReady = true;
+            spawnTime = Time.time;
+        }
+
         /// <param name="maxFlightOverride">Если &gt; 0 — деспавн по этой дистанции (для FPS / shootRange).</param>
         [Server]
         public void Initialize(Vector3 start, Vector3 target, float hitTime, uint netId, int dmg, Vector3 kbDir, float maxFlightOverride, RTSUnit shooter = null)
@@ -192,9 +217,89 @@ namespace RTSokak.Network
         }
 
         [Server]
+        private RTSUnit GetShooterUnit()
+        {
+            if (shooterNetId != 0 && NetworkServer.spawned.TryGetValue(shooterNetId, out NetworkIdentity id))
+                return id != null ? id.GetComponent<RTSUnit>() : null;
+            return null;
+        }
+
+        [Server]
         private void CheckHitSwept()
         {
-            // Приоритет — исходная цель (с учётом высоты тела)
+            float seg = Vector3.Distance(previousPosition, transform.position);
+            if (seg < 0.0001f)
+                return;
+
+            Vector3 segDir = flightDirection.sqrMagnitude > 0.001f ? flightDirection : (transform.position - previousPosition).normalized;
+            RTSUnit shooterUnit = GetShooterUnit();
+            NetworkIdentity shooterId = shooterUnit != null ? shooterUnit.GetComponent<NetworkIdentity>() : null;
+
+            // 1. Быстрый и точный SphereCastAll по лучу движения стрелы
+            RaycastHit[] hits = Physics.SphereCastAll(previousPosition, 0.35f, segDir, seg, ~0, QueryTriggerInteraction.Ignore);
+            if (hits != null && hits.Length > 0)
+            {
+                System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    Collider col = hits[i].collider;
+                    if (col == null || col.isTrigger)
+                        continue;
+
+                    // Пропускаем стрелка
+                    if (shooterUnit != null && (col.transform.IsChildOf(shooterUnit.transform) || col.transform == shooterUnit.transform))
+                        continue;
+
+                    // Проверяем юнита
+                    RTSUnit unit = col.GetComponentInParent<RTSUnit>();
+                    if (unit != null)
+                    {
+                        if (unit.netId == shooterNetId || IsFriendlyUnit(unit))
+                            continue;
+
+                        if (unit.IsAlive)
+                        {
+                            Vector3 kb = knockbackDir.sqrMagnitude > 0.01f ? knockbackDir : segDir;
+                            unit.ServerTakeDamage(arrowDamage, kb, shooterUnit);
+                            if (shooterUnit != null && shooterUnit.IsPlayerControlled)
+                                shooterUnit.RpcShowHitmarker();
+                            hasHit = true;
+                            DestroyArrow(true);
+                            return;
+                        }
+                        continue;
+                    }
+
+                    // Проверяем здание
+                    Buildings.Building building = col.GetComponentInParent<Buildings.Building>();
+                    if (building != null && building.CurrentHealth > 0)
+                    {
+                        if (building.CanBeAttackedBy(shooterOwnerNickname, shooterOwnerPlayerIndex, shooterOwnerConnectionId))
+                        {
+                            building.TakeDamage(arrowDamage, shooterId, out _);
+                            if (shooterUnit != null && shooterUnit.IsPlayerControlled)
+                                shooterUnit.RpcShowHitmarker();
+                            hasHit = true;
+                            DestroyArrow(true);
+                            return;
+                        }
+                        else
+                        {
+                            // Своё здание — стрела втыкается
+                            hasHit = true;
+                            DestroyArrow(false);
+                            return;
+                        }
+                    }
+
+                    // Попадание в землю, дерево, руду или статическое препятствие
+                    hasHit = true;
+                    DestroyArrow(false);
+                    return;
+                }
+            }
+
+            // 2. Приоритет исходной цели (если была задана AI)
             if (targetNetId != 0 && NetworkServer.spawned.TryGetValue(targetNetId, out NetworkIdentity targetIdentity))
             {
                 RTSUnit targetUnit = targetIdentity.GetComponent<RTSUnit>();
@@ -202,28 +307,14 @@ namespace RTSokak.Network
                 {
                     if (targetUnit.netId != shooterNetId && !IsFriendlyUnit(targetUnit))
                     {
-                        if (SweptHitUnit(targetUnit, hitRadius))
+                        if (SweptHitUnit(targetUnit, 0.75f))
                         {
                             Vector3 kb = knockbackDir.sqrMagnitude > 0.01f
                                 ? knockbackDir
                                 : (targetUnit.transform.position - startPosition).normalized;
-                            targetUnit.ServerTakeDamage(arrowDamage, kb, null);
-                            hasHit = true;
-                            DestroyArrow(true);
-                            return;
-                        }
-                    }
-                }
-
-                Buildings.Building targetBuilding = targetIdentity.GetComponent<Buildings.Building>();
-                if (targetBuilding != null && targetBuilding.CurrentHealth > 0)
-                {
-                    if (targetBuilding.CanBeAttackedBy(shooterOwnerNickname, shooterOwnerPlayerIndex, shooterOwnerConnectionId))
-                    {
-                        Vector3 buildingPoint = targetBuilding.transform.position + Vector3.up * 0.5f;
-                        if (DistancePointToSegment(buildingPoint, previousPosition, transform.position) <= buildingHitRadius)
-                        {
-                            targetBuilding.TakeDamage(arrowDamage, null, out _);
+                            targetUnit.ServerTakeDamage(arrowDamage, kb, shooterUnit);
+                            if (shooterUnit != null && shooterUnit.IsPlayerControlled)
+                                shooterUnit.RpcShowHitmarker();
                             hasHit = true;
                             DestroyArrow(true);
                             return;
@@ -232,35 +323,38 @@ namespace RTSokak.Network
                 }
             }
 
-            // Fallback без целевого netId: physics overlap по пути стрелы
+            // 3. Fallback без целевого netId: physics overlap по пути стрелы
             Vector3 mid = (previousPosition + transform.position) * 0.5f;
-            float seg = Vector3.Distance(previousPosition, transform.position);
-            Collider[] hits = Physics.OverlapSphere(mid, hitRadius + seg * 0.5f);
-            for (int i = 0; i < hits.Length; i++)
+            Collider[] overlapHits = Physics.OverlapSphere(mid, 0.75f + seg * 0.5f, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < overlapHits.Length; i++)
             {
-                RTSUnit unit = hits[i].GetComponentInParent<RTSUnit>();
+                Collider col = overlapHits[i];
+                if (col == null || col.isTrigger)
+                    continue;
+
+                RTSUnit unit = col.GetComponentInParent<RTSUnit>();
                 if (unit != null)
                 {
-                    if (!unit.IsAlive)
+                    if (!unit.IsAlive || unit.netId == shooterNetId || IsFriendlyUnit(unit))
                         continue;
-                    if (unit.netId == shooterNetId)
-                        continue;
-                    if (IsFriendlyUnit(unit))
-                        continue;
-                    if (!SweptHitUnit(unit, hitRadius))
+
+                    if (!SweptHitUnit(unit, 0.75f))
                         continue;
 
                     Vector3 kb = unit.transform.position - startPosition;
                     kb.y = 0f;
                     if (kb.sqrMagnitude < 0.001f)
                         kb = knockbackDir;
-                    unit.ServerTakeDamage(arrowDamage, kb.normalized, null);
+
+                    unit.ServerTakeDamage(arrowDamage, kb.normalized, shooterUnit);
+                    if (shooterUnit != null && shooterUnit.IsPlayerControlled)
+                        shooterUnit.RpcShowHitmarker();
                     hasHit = true;
                     DestroyArrow(true);
                     return;
                 }
 
-                Buildings.Building building = hits[i].GetComponentInParent<Buildings.Building>();
+                Buildings.Building building = col.GetComponentInParent<Buildings.Building>();
                 if (building != null && building.CurrentHealth > 0)
                 {
                     if (!building.CanBeAttackedBy(shooterOwnerNickname, shooterOwnerPlayerIndex, shooterOwnerConnectionId))
@@ -269,7 +363,9 @@ namespace RTSokak.Network
                     Vector3 buildingPoint = building.transform.position + Vector3.up * 0.5f;
                     if (DistancePointToSegment(buildingPoint, previousPosition, transform.position) <= buildingHitRadius)
                     {
-                        building.TakeDamage(arrowDamage, null, out _);
+                        building.TakeDamage(arrowDamage, shooterId, out _);
+                        if (shooterUnit != null && shooterUnit.IsPlayerControlled)
+                            shooterUnit.RpcShowHitmarker();
                         hasHit = true;
                         DestroyArrow(true);
                         return;

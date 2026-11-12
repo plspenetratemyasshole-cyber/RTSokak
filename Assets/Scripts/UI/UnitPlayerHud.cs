@@ -54,12 +54,42 @@ namespace RTSokak.UI
         private float cooldownEndTime;
         private float cooldownDuration;
 
+        [Header("Hitmarker")]
+        private RectTransform hitmarkerRoot;
+        private CanvasGroup hitmarkerCg;
+        private readonly RectTransform[] hitmarkerTicks = new RectTransform[4];
+        private float hitmarkerEndTime;
+
+        [Header("Garden Interaction Prompt")]
+        private RectTransform gardenPromptRoot;
+        private CanvasGroup gardenPromptCg;
+        private TextMeshProUGUI gardenPromptText;
+        private Image gardenPromptBg;
+        private float gardenPromptPunch = 1.0f;
+
         private Coroutine resPunchRoutine;
         private Color resourcesOriginalColor = Color.white;
         private bool resourcesOriginalColorCached;
 
         public int SelectedSlot => selectedSlot;
         public bool IsOnCooldown => Time.time < cooldownEndTime;
+
+        public void TriggerGardenPromptPunch()
+        {
+            gardenPromptPunch = 1.25f;
+        }
+
+        public void ShowHitmarker()
+        {
+            EnsureHitmarkerUI();
+            hitmarkerEndTime = Time.unscaledTime + 0.18f;
+            if (hitmarkerRoot != null)
+            {
+                hitmarkerRoot.gameObject.SetActive(true);
+                if (hitmarkerCg != null)
+                    hitmarkerCg.alpha = 1f;
+            }
+        }
 
         public void TriggerCooldown(float duration)
         {
@@ -259,6 +289,8 @@ namespace RTSokak.UI
             Instance = this;
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
+            EnsureHitmarkerUI();
+            EnsureGardenPromptUI();
             if (hudRoot != null)
                 hudRoot.SetActive(false);
         }
@@ -290,6 +322,8 @@ namespace RTSokak.UI
 
             Show();
             UpdateCooldownBar();
+            UpdateHitmarker();
+            UpdateGardenPrompt();
             HandleHotbarInput();
             RefreshHealth(unit);
             RefreshResources(unit);
@@ -735,10 +769,253 @@ namespace RTSokak.UI
             Destroy(bannerGo);
         }
 
+        public void EnsureHitmarkerUI()
+        {
+            if (hitmarkerRoot != null || hudRoot == null)
+                return;
+
+            Transform existing = hudRoot.transform.Find("Hitmarker");
+            if (existing != null)
+            {
+                hitmarkerRoot = existing as RectTransform;
+                hitmarkerCg = existing.GetComponent<CanvasGroup>();
+                for (int i = 0; i < 4; i++)
+                {
+                    Transform t = hitmarkerRoot.Find($"Tick_{i}");
+                    if (t != null) hitmarkerTicks[i] = t as RectTransform;
+                }
+                return;
+            }
+
+            GameObject hmGo = new GameObject("Hitmarker", typeof(RectTransform), typeof(CanvasGroup));
+            hmGo.transform.SetParent(hudRoot.transform, false);
+            hitmarkerRoot = hmGo.GetComponent<RectTransform>();
+            hitmarkerRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            hitmarkerRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            hitmarkerRoot.pivot = new Vector2(0.5f, 0.5f);
+            hitmarkerRoot.anchoredPosition = Vector2.zero;
+            hitmarkerRoot.sizeDelta = Vector2.zero;
+
+            hitmarkerCg = hmGo.GetComponent<CanvasGroup>();
+            hitmarkerCg.blocksRaycasts = false;
+            hitmarkerCg.interactable = false;
+
+            float[] angles = new float[] { -45f, 45f, -45f, 45f };
+            for (int i = 0; i < 4; i++)
+            {
+                GameObject tickGo = new GameObject($"Tick_{i}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                tickGo.transform.SetParent(hitmarkerRoot, false);
+                RectTransform rt = tickGo.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(0.5f, 0.5f);
+                rt.anchorMax = new Vector2(0.5f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(2.5f, 8f);
+                rt.localRotation = Quaternion.Euler(0f, 0f, angles[i]);
+
+                Image img = tickGo.GetComponent<Image>();
+                img.sprite = GetWhiteSprite();
+                img.color = new Color(1f, 0.25f, 0.25f, 0.95f);
+                img.raycastTarget = false;
+
+                hitmarkerTicks[i] = rt;
+            }
+
+            hmGo.SetActive(false);
+        }
+
+        private void UpdateHitmarker()
+        {
+            if (hitmarkerRoot == null)
+                return;
+
+            if (Time.unscaledTime < hitmarkerEndTime)
+            {
+                if (!hitmarkerRoot.gameObject.activeSelf)
+                    hitmarkerRoot.gameObject.SetActive(true);
+
+                float t = Mathf.Clamp01((hitmarkerEndTime - Time.unscaledTime) / 0.18f);
+                float dist = Mathf.Lerp(8f, 16f, 1f - t);
+
+                if (hitmarkerTicks[0] != null) hitmarkerTicks[0].anchoredPosition = new Vector2(dist, dist);
+                if (hitmarkerTicks[1] != null) hitmarkerTicks[1].anchoredPosition = new Vector2(dist, -dist);
+                if (hitmarkerTicks[2] != null) hitmarkerTicks[2].anchoredPosition = new Vector2(-dist, -dist);
+                if (hitmarkerTicks[3] != null) hitmarkerTicks[3].anchoredPosition = new Vector2(-dist, dist);
+
+                if (hitmarkerCg != null)
+                    hitmarkerCg.alpha = Mathf.Clamp01(t * 1.5f);
+            }
+            else
+            {
+                if (hitmarkerRoot.gameObject.activeSelf)
+                    hitmarkerRoot.gameObject.SetActive(false);
+            }
+        }
+
+        public void EnsureGardenPromptUI()
+        {
+            if (gardenPromptRoot != null || hudRoot == null)
+                return;
+
+            Transform existing = hudRoot.transform.Find("GardenPrompt");
+            if (existing != null)
+            {
+                gardenPromptRoot = existing as RectTransform;
+                gardenPromptCg = existing.GetComponent<CanvasGroup>();
+                gardenPromptBg = existing.GetComponent<Image>();
+                Transform textTr = existing.Find("Text");
+                if (textTr != null)
+                    gardenPromptText = textTr.GetComponent<TextMeshProUGUI>();
+                return;
+            }
+
+            GameObject promptGo = new GameObject("GardenPrompt", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(CanvasGroup));
+            promptGo.transform.SetParent(hudRoot.transform, false);
+
+            gardenPromptRoot = promptGo.GetComponent<RectTransform>();
+            gardenPromptRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            gardenPromptRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            gardenPromptRoot.pivot = new Vector2(0.5f, 0.5f);
+            gardenPromptRoot.anchoredPosition = new Vector2(0f, -68f);
+            gardenPromptRoot.sizeDelta = new Vector2(380f, 36f);
+
+            gardenPromptBg = promptGo.GetComponent<Image>();
+            gardenPromptBg.sprite = GetWhiteSprite();
+            gardenPromptBg.color = new Color(0.06f, 0.08f, 0.1f, 0.88f);
+            gardenPromptBg.raycastTarget = false;
+
+            gardenPromptCg = promptGo.GetComponent<CanvasGroup>();
+            gardenPromptCg.alpha = 0f;
+            gardenPromptCg.blocksRaycasts = false;
+            gardenPromptCg.interactable = false;
+
+            GameObject textGo = new GameObject("Text", typeof(RectTransform));
+            textGo.transform.SetParent(promptGo.transform, false);
+            RectTransform textRt = textGo.GetComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(10f, 0f);
+            textRt.offsetMax = new Vector2(-10f, 0f);
+
+            gardenPromptText = textGo.AddComponent<TextMeshProUGUI>();
+            gardenPromptText.fontSize = 15;
+            gardenPromptText.fontStyle = FontStyles.Bold;
+            gardenPromptText.alignment = TextAlignmentOptions.Center;
+            gardenPromptText.color = Color.white;
+            gardenPromptText.outlineWidth = 0.2f;
+            gardenPromptText.outlineColor = Color.black;
+            gardenPromptText.raycastTarget = false;
+
+            promptGo.SetActive(false);
+        }
+
+        private void UpdateGardenPrompt()
+        {
+            EnsureGardenPromptUI();
+            if (gardenPromptRoot == null || gardenPromptCg == null)
+                return;
+
+            float targetAlpha = 0f;
+            string promptStr = "";
+            Color promptColor = Color.white;
+
+            if (boundUnit is Worker worker && worker.IsAlive)
+            {
+                var upc = UnitPlayerController.Instance;
+                Vector3 lookDir = upc != null && upc.FpsCamera != null
+                    ? upc.FpsCamera.transform.forward
+                    : worker.transform.forward;
+
+                var buildings = Buildings.Building.AllBuildings;
+                Buildings.GardenBed bestGarden = null;
+                int bestPlot = -1;
+                Buildings.GardenPlotState bestState = Buildings.GardenPlotState.Empty;
+                float bestProgress = 0f;
+                float bestDist = float.MaxValue;
+
+                for (int i = 0; i < buildings.Count; i++)
+                {
+                    var b = buildings[i];
+                    if (b == null || !b.IsComplete || !b.IsOwnedByLocalPlayer())
+                        continue;
+
+                    var garden = b.GetComponent<Buildings.GardenBed>();
+                    if (garden == null)
+                        continue;
+
+                    float d = Vector3.Distance(worker.transform.position, garden.transform.position);
+                    if (d > 8f)
+                        continue;
+
+                    if (garden.TryFindPlayerInteractablePlot(worker.transform.position, lookDir, 2.6f, out int plot, out Buildings.GardenPlotState s, out float prog))
+                    {
+                        if (d < bestDist)
+                        {
+                            bestDist = d;
+                            bestGarden = garden;
+                            bestPlot = plot;
+                            bestState = s;
+                            bestProgress = prog;
+                        }
+                    }
+                }
+
+                if (bestGarden != null && bestPlot >= 0)
+                {
+                    targetAlpha = 1f;
+                    if (worker.IsInventoryFull && bestState == Buildings.GardenPlotState.Ready)
+                    {
+                        promptStr = "Инвентарь полон! Отнесите ресурсы на склад";
+                        promptColor = Color.Lerp(new Color(1f, 0.4f, 0.15f), new Color(1f, 0.15f, 0.15f), 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8f));
+                    }
+                    else if (bestState == Buildings.GardenPlotState.Ready)
+                    {
+                        promptStr = "[F] Собрать пшеницу и засеять (+50 Food)";
+                        promptColor = new Color(0.85f, 1f, 0.25f, 1f);
+                    }
+                    else if (bestState == Buildings.GardenPlotState.Empty)
+                    {
+                        promptStr = "[F] Посадить пшеницу";
+                        promptColor = new Color(0.45f, 1f, 0.55f, 1f);
+                    }
+                    else if (bestState == Buildings.GardenPlotState.Growing)
+                    {
+                        promptStr = $"Пшеница растёт... {Mathf.RoundToInt(bestProgress * 100f)}%";
+                        promptColor = new Color(0.85f, 0.92f, 1f, 0.9f);
+                    }
+                }
+            }
+
+            if (targetAlpha > 0f)
+            {
+                if (!gardenPromptRoot.gameObject.activeSelf)
+                    gardenPromptRoot.gameObject.SetActive(true);
+
+                if (gardenPromptText != null)
+                {
+                    gardenPromptText.text = promptStr;
+                    gardenPromptText.color = promptColor;
+                }
+            }
+
+            gardenPromptCg.alpha = Mathf.MoveTowards(gardenPromptCg.alpha, targetAlpha, Time.unscaledDeltaTime * 6f);
+            gardenPromptPunch = Mathf.MoveTowards(gardenPromptPunch, 1.0f, Time.unscaledDeltaTime * 2.5f);
+
+            float breath = 1f + 0.03f * Mathf.Sin(Time.unscaledTime * 5f);
+            float scale = Mathf.Lerp(0.75f, 1.0f, gardenPromptCg.alpha) * breath * gardenPromptPunch;
+            gardenPromptRoot.localScale = new Vector3(scale, scale, 1f);
+
+            if (gardenPromptCg.alpha <= 0.01f && targetAlpha == 0f && gardenPromptRoot.gameObject.activeSelf)
+            {
+                gardenPromptRoot.gameObject.SetActive(false);
+            }
+        }
+
         private void Show()
         {
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
+            EnsureHitmarkerUI();
+            EnsureGardenPromptUI();
             if (hudRoot != null && !hudRoot.activeSelf)
                 hudRoot.SetActive(true);
             if (crosshair != null)
@@ -754,6 +1031,12 @@ namespace RTSokak.UI
             lastWood = -1;
             lastOre = -1;
             lastFood = -1;
+            if (hitmarkerRoot != null && hitmarkerRoot.gameObject.activeSelf)
+                hitmarkerRoot.gameObject.SetActive(false);
+            if (gardenPromptRoot != null && gardenPromptRoot.gameObject.activeSelf)
+                gardenPromptRoot.gameObject.SetActive(false);
+            if (gardenPromptCg != null)
+                gardenPromptCg.alpha = 0f;
             if (hudRoot != null && hudRoot.activeSelf)
                 hudRoot.SetActive(false);
         }

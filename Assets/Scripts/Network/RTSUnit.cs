@@ -1155,6 +1155,11 @@ namespace RTSokak.Network
             ServerApplyKnockback(knockbackDir.normalized);
             RpcHitFlash();
 
+            if (attacker != null && damage > 0 && attacker.IsPlayerControlled)
+            {
+                attacker.RpcShowHitmarker();
+            }
+
             if (currentHealth <= 0)
                 ServerDie();
         }
@@ -1641,6 +1646,11 @@ namespace RTSokak.Network
             ServerApplyKnockback(knockbackDir.normalized);
             RpcHitFlash();
 
+            if (attacker != null && damage > 0 && attacker.IsPlayerControlled)
+            {
+                attacker.RpcShowHitmarker();
+            }
+
             // Ответный удар: в бою — смена цели; в простое — начать бой с обидчиком (только AI)
             if (currentHealth > 0 &&
                 !IsPlayerControlled &&
@@ -1656,6 +1666,17 @@ namespace RTSokak.Network
 
             if (currentHealth <= 0)
                 ServerDie();
+        }
+
+        [ClientRpc]
+        public void RpcShowHitmarker()
+        {
+            if (UnitPlayerController.Instance != null &&
+                UnitPlayerController.Instance.IsActive &&
+                UnitPlayerController.Instance.ControlledUnit == this)
+            {
+                RTSokak.UI.UnitPlayerHud.Instance?.ShowHitmarker();
+            }
         }
 
         /// <summary>Можно ли начать бой в ответ, если юнит сейчас не в бою (стоит без дел).</summary>
@@ -2096,6 +2117,8 @@ namespace RTSokak.Network
                     building.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
                 {
                     building.TakeDamage(attackDamage, unitNetIdentity, out _);
+                    if (IsPlayerControlled)
+                        RpcShowHitmarker();
                 }
             }
         }

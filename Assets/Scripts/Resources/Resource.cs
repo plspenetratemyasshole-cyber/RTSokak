@@ -44,6 +44,10 @@ namespace RTSokak.Resources
         public int MaxHealth => maxHealth;
 
         private NetworkIdentity claimedBy;
+        private Quaternion initialLocalRotation;
+        private Vector3 initialLocalScale;
+        private bool hasSavedInitialTransform;
+        private Coroutine hitShakeRoutine;
 
         public bool IsClaimed => claimedBy != null;
         public bool IsAvailable => !IsHarvested && claimedBy == null;
@@ -61,6 +65,9 @@ namespace RTSokak.Resources
         private void Awake()
         {
             CurrentHealth = maxHealth;
+            initialLocalRotation = transform.localRotation;
+            initialLocalScale = transform.localScale;
+            hasSavedInitialTransform = true;
             OptimizeStaticResource();
         }
 
@@ -173,22 +180,9 @@ namespace RTSokak.Resources
                 amountThisHit = resourceAmount;
             }
 
-            // Воспроизводим партиклы при КАЖДОМ ударе
+            // Воспроизводим партиклы и покачивание на клиентах при КАЖДОМ ударе
             Vector3 fxPos = GetCenterPosition();
-            ResourceType type = resourceType;
-
-            try
-            {
-                ResourceManager manager = FindFirstObjectByType<ResourceManager>();
-                if (manager != null)
-                {
-                    manager.PlayHarvestParticles(type, fxPos);
-                }
-            }
-            catch (System.Exception e)
-            {
-                UnityEngine.Debug.LogException(e);
-            }
+            RpcPlayHitShake(fxPos);
 
             // Если здоровье кончилось -- уничтожаем
             if (CurrentHealth <= 0)
@@ -216,6 +210,68 @@ namespace RTSokak.Resources
             }
 
             return amountThisHit;
+        }
+
+        [ClientRpc]
+        private void RpcPlayHitShake(Vector3 hitPos)
+        {
+            try
+            {
+                ResourceManager manager = FindFirstObjectByType<ResourceManager>();
+                if (manager != null)
+                {
+                    manager.PlayHarvestParticles(resourceType, hitPos);
+                }
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+
+            if (gameObject.activeInHierarchy)
+            {
+                if (hitShakeRoutine != null)
+                    StopCoroutine(hitShakeRoutine);
+                hitShakeRoutine = StartCoroutine(AnimateHitShake());
+            }
+        }
+
+        private System.Collections.IEnumerator AnimateHitShake()
+        {
+            if (!hasSavedInitialTransform)
+            {
+                initialLocalRotation = transform.localRotation;
+                initialLocalScale = transform.localScale;
+                hasSavedInitialTransform = true;
+            }
+
+            float duration = 0.22f;
+            float elapsed = 0f;
+
+            float tiltAngle = Random.Range(4.5f, 6.0f);
+            float randomYaw = Random.Range(0f, 360f);
+            Vector3 tiltAxis = Quaternion.Euler(0f, randomYaw, 0f) * Vector3.right;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Затухающая синусоида покачивания
+                float decay = 1f - t;
+                float currentTilt = Mathf.Sin(t * Mathf.PI * 3f) * tiltAngle * decay;
+                transform.localRotation = initialLocalRotation * Quaternion.AngleAxis(currentTilt, tiltAxis);
+
+                // Scale punch: 1.0 -> 0.94 -> 1.0
+                float punch = Mathf.Lerp(1.0f, 0.94f, Mathf.Sin(t * Mathf.PI));
+                transform.localScale = initialLocalScale * punch;
+
+                yield return null;
+            }
+
+            transform.localRotation = initialLocalRotation;
+            transform.localScale = initialLocalScale;
+            hitShakeRoutine = null;
         }
 
         private void HideLocally()

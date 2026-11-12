@@ -42,6 +42,9 @@ namespace RTSokak.Buildings
         private readonly SyncList<float> plotGrowDurations = new SyncList<float>();
 
         private readonly List<GameObject> wheatVisuals = new List<GameObject>();
+        private readonly List<int> wheatStageIndices = new List<int>();
+        private readonly List<float> wheatSpawnTimes = new List<float>();
+        private readonly List<Vector3> wheatBaseScales = new List<Vector3>();
         private MaterialPropertyBlock mpb;
 
         [SyncVar]
@@ -322,11 +325,16 @@ namespace RTSokak.Buildings
                         Destroy(wheatVisuals[i]);
                         wheatVisuals[i] = null;
                     }
+                    wheatStageIndices[i] = -1;
                     continue;
                 }
 
                 if (wheatVisuals[i] == null)
-                    wheatVisuals[i] = SpawnWheatVisual(i);
+                {
+                    wheatVisuals[i] = SpawnWheatVisual(i, 1);
+                    wheatStageIndices[i] = 1;
+                    wheatSpawnTimes[i] = Time.time;
+                }
             }
 
             UpdateWheatVisuals();
@@ -336,41 +344,57 @@ namespace RTSokak.Buildings
         {
             int n = plantPoints != null ? plantPoints.Length : 0;
             while (wheatVisuals.Count < n)
+            {
                 wheatVisuals.Add(null);
+                wheatStageIndices.Add(-1);
+                wheatSpawnTimes.Add(0f);
+                wheatBaseScales.Add(Vector3.one);
+            }
             while (wheatVisuals.Count > n)
             {
                 int last = wheatVisuals.Count - 1;
                 if (wheatVisuals[last] != null)
                     Destroy(wheatVisuals[last]);
                 wheatVisuals.RemoveAt(last);
+                wheatStageIndices.RemoveAt(last);
+                wheatSpawnTimes.RemoveAt(last);
+                wheatBaseScales.RemoveAt(last);
             }
         }
 
-        private GameObject SpawnWheatVisual(int index)
+        private GameObject SpawnWheatVisual(int index, int stage)
         {
-            // Создаём пшеницу стадии 1 (только что посажена)
             GameObject prefab = wheatStage1Prefab;
+            if (stage == 2 && wheatStage2Prefab != null) prefab = wheatStage2Prefab;
+            else if (stage == 3 && wheatStage3Prefab != null) prefab = wheatStage3Prefab;
+
             if (prefab == null)
                 prefab = UnityEngine.Resources.Load<GameObject>("Prefabs/Wheat");
 
             GameObject go;
+            Vector3 baseScale;
             if (prefab != null)
             {
                 go = Instantiate(prefab);
+                baseScale = prefab.transform.localScale;
             }
             else
             {
                 go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                go.name = "Wheat";
                 Collider col = go.GetComponent<Collider>();
                 if (col != null)
                     Destroy(col);
+                baseScale = new Vector3(0.25f, 0.45f, 0.25f);
             }
 
             go.name = $"Wheat_{index}";
             go.transform.SetParent(null, true);
-            go.transform.localScale = prefab != null ? prefab.transform.localScale : new Vector3(0.25f, 0.45f, 0.25f);
+            go.transform.localScale = baseScale;
             go.transform.rotation = Quaternion.identity;
+
+            if (index >= 0 && index < wheatBaseScales.Count)
+                wheatBaseScales[index] = baseScale;
+
             return go;
         }
 
@@ -382,16 +406,23 @@ namespace RTSokak.Buildings
             double now = NetworkTime.time;
             for (int i = 0; i < wheatVisuals.Count && i < plotStates.Count; i++)
             {
-                GameObject wheat = wheatVisuals[i];
-                if (wheat == null)
-                    continue;
-
                 Transform point = plantPoints[i];
                 if (point == null)
                     continue;
 
-                float t = 1f;
                 byte state = plotStates[i];
+                if (state == (byte)GardenPlotState.Empty)
+                {
+                    if (wheatVisuals[i] != null)
+                    {
+                        Destroy(wheatVisuals[i]);
+                        wheatVisuals[i] = null;
+                    }
+                    wheatStageIndices[i] = -1;
+                    continue;
+                }
+
+                float t = 1f;
                 if (state == (byte)GardenPlotState.Growing)
                 {
                     float dur = i < plotGrowDurations.Count ? plotGrowDurations[i] : 1f;
@@ -403,60 +434,43 @@ namespace RTSokak.Buildings
                 {
                     t = 1f;
                 }
-                else
+
+                int targetStage = t < 0.33f ? 1 : (t < 0.66f ? 2 : 3);
+
+                // Заменять модель только при реальной смене стадии
+                if (wheatVisuals[i] == null || wheatStageIndices[i] != targetStage)
                 {
-                    t = 0f;
+                    if (wheatVisuals[i] != null)
+                        Destroy(wheatVisuals[i]);
+
+                    wheatVisuals[i] = SpawnWheatVisual(i, targetStage);
+                    wheatStageIndices[i] = targetStage;
+                    wheatSpawnTimes[i] = Time.time;
                 }
 
-                // Определить какая стадия нужна (1, 2 или 3)
-                GameObject targetPrefab;
-                if (t < 0.33f)
-                    targetPrefab = wheatStage1Prefab; // Стадия 1: 0-33%
-                else if (t < 0.66f)
-                    targetPrefab = wheatStage2Prefab; // Стадия 2: 33-66%
-                else
-                    targetPrefab = wheatStage3Prefab; // Стадия 3: 66-100% (готова к сбору)
+                GameObject wheat = wheatVisuals[i];
+                if (wheat == null)
+                    continue;
 
-                // Проверить нужно ли заменить модель
-                if (targetPrefab != null && !IsSamePrefab(wheat, targetPrefab))
-                {
-                    // Заменить модель
-                    Vector3 currentPos = wheat.transform.position;
-                    Quaternion currentRot = wheat.transform.rotation;
-                    
-                    Destroy(wheat);
-                    GameObject newWheat = Instantiate(targetPrefab);
-                    newWheat.name = $"Wheat_{i}";
-                    newWheat.transform.position = currentPos;
-                    newWheat.transform.rotation = currentRot;
-                    newWheat.transform.SetParent(null, true);
-                    
-                    wheatVisuals[i] = newWheat;
-                    wheat = newWheat;
-                }
-
-                // Установить позицию на точке посадки (без изменения высоты)
+                // Установить позицию на точке посадки
                 wheat.transform.position = point.position;
-                wheat.transform.rotation = Quaternion.identity;
+
+                // Покачивание колосьев на ветру (амплитуда растёт со зрелостью)
+                float windX = Mathf.Sin(Time.time * 2.2f + i * 1.3f) * 4.5f * (0.3f + 0.7f * t);
+                float windZ = Mathf.Cos(Time.time * 1.8f + i * 0.9f) * 3.5f * (0.3f + 0.7f * t);
+                wheat.transform.rotation = Quaternion.Euler(windX, (i * 57f) % 360f, windZ);
+
+                // Плавный pop-in и мягкий рост масштаба
+                Vector3 baseScale = i < wheatBaseScales.Count ? wheatBaseScales[i] : Vector3.one;
+                float popElapsed = Time.time - (i < wheatSpawnTimes.Count ? wheatSpawnTimes[i] : 0f);
+                float pop = popElapsed < 0.25f ? Mathf.SmoothStep(0.25f, 1f, popElapsed / 0.25f) : 1f;
+                float growthScale = Mathf.Lerp(0.65f, 1.0f, t);
+                wheat.transform.localScale = baseScale * (growthScale * pop);
 
                 // Изменить цвет от молодого к спелому
                 Color c = Color.Lerp(youngColor, ripeColor, t);
                 ApplyColor(wheat, c);
             }
-        }
-
-        /// <summary>
-        /// Проверить является ли объект экземпляром данного prefab
-        /// </summary>
-        private bool IsSamePrefab(GameObject obj, GameObject prefab)
-        {
-            if (obj == null || prefab == null)
-                return false;
-            
-            // Простая проверка по имени (можно улучшить)
-            string objName = obj.name.Replace("(Clone)", "").Trim();
-            string prefabName = prefab.name.Trim();
-            return objName.StartsWith(prefabName);
         }
 
         private void ApplyColor(GameObject go, Color color)
@@ -482,6 +496,107 @@ namespace RTSokak.Buildings
                     Destroy(wheatVisuals[i]);
             }
             wheatVisuals.Clear();
+            wheatStageIndices.Clear();
+            wheatSpawnTimes.Clear();
+            wheatBaseScales.Clear();
+        }
+
+        /// <summary>
+        /// Поиск ближайшей лунки для игрока в FPS режиме.
+        /// </summary>
+        public bool TryFindPlayerInteractablePlot(Vector3 playerPos, Vector3 lookDir, float maxDist, out int plotIndex, out GardenPlotState state, out float growProgress)
+        {
+            plotIndex = -1;
+            state = GardenPlotState.Empty;
+            growProgress = 0f;
+
+            if (building == null)
+                building = GetComponent<Building>();
+            if (building == null || !building.IsComplete)
+                return false;
+
+            if (plantPoints == null || plantPoints.Length == 0 || plotStates.Count == 0)
+                return false;
+
+            Vector3 lookFlat = new Vector3(lookDir.x, 0f, lookDir.z);
+            if (lookFlat.sqrMagnitude > 0.001f)
+                lookFlat.Normalize();
+            else
+                lookFlat = Vector3.forward;
+
+            int bestActionPlot = -1;
+            float bestActionScore = float.MaxValue;
+            GardenPlotState bestActionState = GardenPlotState.Empty;
+
+            int bestGrowingPlot = -1;
+            float bestGrowingDist = float.MaxValue;
+            float bestGrowingProgress = 0f;
+
+            double now = NetworkTime.time;
+
+            for (int i = 0; i < plantPoints.Length && i < plotStates.Count; i++)
+            {
+                if (plantPoints[i] == null)
+                    continue;
+
+                Vector3 plotWorld = plantPoints[i].position;
+                Vector3 diff = plotWorld - playerPos;
+                float distXZ = new Vector2(diff.x, diff.z).magnitude;
+
+                GardenPlotState s = (GardenPlotState)plotStates[i];
+
+                if (s == GardenPlotState.Ready || s == GardenPlotState.Empty)
+                {
+                    if (distXZ <= maxDist)
+                    {
+                        Vector3 dirToPlot = diff;
+                        dirToPlot.y = 0f;
+                        if (dirToPlot.sqrMagnitude > 0.001f)
+                            dirToPlot.Normalize();
+
+                        float dot = Vector3.Dot(lookFlat, dirToPlot);
+                        float priorityBias = (s == GardenPlotState.Ready) ? -1.2f : 0f;
+                        float score = distXZ - dot * 0.9f + priorityBias;
+
+                        if (score < bestActionScore)
+                        {
+                            bestActionScore = score;
+                            bestActionPlot = i;
+                            bestActionState = s;
+                        }
+                    }
+                }
+                else if (s == GardenPlotState.Growing)
+                {
+                    if (distXZ <= 2.2f && distXZ < bestGrowingDist)
+                    {
+                        bestGrowingDist = distXZ;
+                        bestGrowingPlot = i;
+
+                        float dur = i < plotGrowDurations.Count ? plotGrowDurations[i] : 1f;
+                        double start = i < plotGrowStarts.Count ? plotGrowStarts[i] : now;
+                        bestGrowingProgress = dur > 0.01f ? Mathf.Clamp01((float)((now - start) / dur)) : 0f;
+                    }
+                }
+            }
+
+            if (bestActionPlot >= 0)
+            {
+                plotIndex = bestActionPlot;
+                state = bestActionState;
+                growProgress = (state == GardenPlotState.Ready) ? 1f : 0f;
+                return true;
+            }
+
+            if (bestGrowingPlot >= 0)
+            {
+                plotIndex = bestGrowingPlot;
+                state = GardenPlotState.Growing;
+                growProgress = bestGrowingProgress;
+                return true;
+            }
+
+            return false;
         }
 
         private void ResolvePlantPoints()

@@ -114,6 +114,10 @@ namespace RTSokak.UI
         private RectTransform playerMarker;
         private Image playerMarkerImage;
 
+        // Пульсация точек Столицы и Складов при полном инвентаре Worker
+        private readonly List<RectTransform> depositPulseRings = new List<RectTransform>(8);
+        private readonly List<Image> depositPulseImages = new List<Image>(8);
+
         private static readonly Vector3[] ViewportCorners =
         {
             new Vector3(0f, 0f, 0f),
@@ -178,6 +182,9 @@ namespace RTSokak.UI
 
             // FOV и маркер юнита-игрока (желтый конус и желтый кружочек)
             UpdatePlayerUnitOverlay();
+
+            // Пульсация точек Столицы и Складов при полном инвентаре Worker
+            UpdateFullInventoryDepositPulse();
         }
 
         private void ForceWorldRedraw()
@@ -351,6 +358,37 @@ namespace RTSokak.UI
                 playerMarker.sizeDelta = new Vector2(playerMarkerSize, playerMarkerSize);
                 playerMarker.gameObject.SetActive(false);
             }
+
+            // Пул индикаторов пульсации для сдачи ресурсов (до 8 штук)
+            Sprite circle = GetCircleSprite();
+            while (depositPulseRings.Count < 8)
+            {
+                int idx = depositPulseRings.Count;
+                Transform child = fovOverlay.Find($"DepositPulse_{idx}");
+                GameObject pulseGo;
+                if (child != null)
+                {
+                    pulseGo = child.gameObject;
+                }
+                else
+                {
+                    pulseGo = new GameObject($"DepositPulse_{idx}", typeof(RectTransform), typeof(CanvasRenderer));
+                    pulseGo.transform.SetParent(fovOverlay, false);
+                }
+
+                RectTransform rt = pulseGo.GetComponent<RectTransform>();
+                Image img = pulseGo.GetComponent<Image>();
+                if (img == null)
+                    img = pulseGo.AddComponent<Image>();
+
+                img.sprite = circle;
+                img.raycastTarget = false;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                pulseGo.SetActive(false);
+
+                depositPulseRings.Add(rt);
+                depositPulseImages.Add(img);
+            }
         }
 
         private void EnsureTexture()
@@ -521,6 +559,11 @@ namespace RTSokak.UI
 
             if (showBuildings)
             {
+                bool isWorkerFull = UnitPlayerController.Instance != null &&
+                                    UnitPlayerController.Instance.IsActive &&
+                                    UnitPlayerController.Instance.ControlledUnit is Worker pw &&
+                                    pw.IsInventoryFull;
+
                 var buildings = Building.AllBuildings;
                 for (int i = 0; i < buildings.Count; i++)
                 {
@@ -531,8 +574,15 @@ namespace RTSokak.UI
                         continue;
 
                     Vector3 pos = b.FinalPosition != Vector3.zero ? b.FinalPosition : b.transform.position;
-                    Color32 c = b.IsOwnedByLocalPlayer() ? ownBuildingColor : enemyBuildingColor;
-                    DrawDotWorld(res, pos, buildingDotRadius, c);
+                    bool isDepositPulse = isWorkerFull && b.IsComplete && b.IsOwnedByLocalPlayer() &&
+                                          (b.Type == BuildingType.Capital || b.Type == BuildingType.Warehouse);
+
+                    int dotRadius = isDepositPulse ? buildingDotRadius + 2 : buildingDotRadius;
+                    Color32 c = isDepositPulse
+                        ? new Color32(255, 235, 45, 255)
+                        : (b.IsOwnedByLocalPlayer() ? ownBuildingColor : enemyBuildingColor);
+
+                    DrawDotWorld(res, pos, dotRadius, c);
                 }
             }
 
@@ -728,6 +778,78 @@ namespace RTSokak.UI
             {
                 if (playerFovLines[i] != null && playerFovLines[i].gameObject.activeSelf)
                     playerFovLines[i].gameObject.SetActive(false);
+            }
+        }
+
+        private void UpdateFullInventoryDepositPulse()
+        {
+            if (fovOverlay == null || mapRect == null)
+            {
+                HideDepositPulse();
+                return;
+            }
+
+            var lp = RTSPlayer.localPlayer;
+            if (lp == null || lp.Role != PlayerRole.UnitPlaying)
+            {
+                HideDepositPulse();
+                return;
+            }
+
+            var upc = UnitPlayerController.Instance;
+            if (upc == null || !upc.IsActive || !(upc.ControlledUnit is Worker w) || !w.IsInventoryFull)
+            {
+                HideDepositPulse();
+                return;
+            }
+
+            var buildings = Building.AllBuildings;
+            int ringIdx = 0;
+            float wave = Mathf.Repeat(Time.unscaledTime * 1.4f, 1f);
+            float size = Mathf.Lerp(10f, 24f, wave);
+            Color pulseColor = new Color(1f, 0.9f, 0.2f, Mathf.Lerp(0.95f, 0.15f, wave));
+
+            for (int i = 0; i < buildings.Count && ringIdx < depositPulseRings.Count; i++)
+            {
+                var b = buildings[i];
+                if (b == null || !b.IsComplete || !b.IsOwnedByLocalPlayer())
+                    continue;
+
+                if (b.Type != BuildingType.Capital && b.Type != BuildingType.Warehouse)
+                    continue;
+
+                Vector3 pos = b.FinalPosition != Vector3.zero ? b.FinalPosition : b.transform.position;
+                Vector2 mapPos = WorldToMapLocal(pos);
+                Rect r = mapRect.rect;
+                mapPos.x = Mathf.Clamp(mapPos.x, r.xMin, r.xMax);
+                mapPos.y = Mathf.Clamp(mapPos.y, r.yMin, r.yMax);
+
+                var rt = depositPulseRings[ringIdx];
+                var img = depositPulseImages[ringIdx];
+                if (rt != null && img != null)
+                {
+                    if (!rt.gameObject.activeSelf)
+                        rt.gameObject.SetActive(true);
+                    rt.anchoredPosition = mapPos;
+                    rt.sizeDelta = new Vector2(size, size);
+                    img.color = pulseColor;
+                }
+                ringIdx++;
+            }
+
+            for (int i = ringIdx; i < depositPulseRings.Count; i++)
+            {
+                if (depositPulseRings[i] != null && depositPulseRings[i].gameObject.activeSelf)
+                    depositPulseRings[i].gameObject.SetActive(false);
+            }
+        }
+
+        private void HideDepositPulse()
+        {
+            for (int i = 0; i < depositPulseRings.Count; i++)
+            {
+                if (depositPulseRings[i] != null && depositPulseRings[i].gameObject.activeSelf)
+                    depositPulseRings[i].gameObject.SetActive(false);
             }
         }
 

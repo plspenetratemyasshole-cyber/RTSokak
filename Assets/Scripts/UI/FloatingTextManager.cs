@@ -173,5 +173,18 @@ namespace RTSokak.UI
 
             FloatingText.Create(screenPosition, text, color, floatingTextCanvas, duration);
         }
+
+        /// <summary>
+        /// Показать произвольное сообщение в мировых координатах
+        /// </summary>
+        public void ShowCustomWorldText(Vector3 worldPos, string text, Color color, float duration = 2f)
+        {
+            if (floatingTextCanvas == null)
+            {
+                CreateFloatingTextCanvas();
+            }
+
+            FloatingText.Create(worldPos, text, color, floatingTextCanvas, duration);
+        }
     }
 }
