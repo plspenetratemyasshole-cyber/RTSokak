@@ -344,7 +344,7 @@ namespace RTSokak.UI
             CreateButton(
                 mainPanel.transform,
                 "BtnAllRes",
-                "+1000 Все",
+                "+1000 All",
                 new Vector2(10f, curY),
                 new Vector2(panelWidth - 20f, 26f),
                 new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),

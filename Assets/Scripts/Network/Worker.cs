@@ -380,7 +380,10 @@ namespace RTSokak.Network
             base.Update();
 
             if (isServer && IsPlayerControlled)
+            {
                 ServerUpdatePlayerHarvestPending();
+                ServerUpdatePlayerAutoDeposit();
+            }
 
             // Плавный поворот к ресурсу перед добычей
             if (isRotatingToHarvest && currentState == WorkerState.Harvesting)
@@ -2315,6 +2318,7 @@ namespace RTSokak.Network
         }
 
         private float nextPlayerPrimaryTime;
+        private float nextPlayerAutoDepositTime;
         private bool playerHarvestPending;
         private float playerHarvestReadyTime;
         private RTSokak.Resources.ResourceType playerHarvestType;
@@ -2322,6 +2326,102 @@ namespace RTSokak.Network
         private NetworkIdentity playerGardenTarget;
         private int playerGardenPlot = -1;
         private bool playerGardenIsHarvest;
+
+        public override float GetPlayerActionCooldown()
+        {
+            int slot = playerHotbarSlot;
+            if (RTSokak.UI.UnitPlayerHud.Instance != null && RTSokak.UI.UnitPlayerHud.Instance.SelectedSlot >= 0)
+                slot = RTSokak.UI.UnitPlayerHud.Instance.SelectedSlot;
+            return slot == 0 ? attackCooldown : Mathf.Max(0.2f, playerToolSwingDuration);
+        }
+
+        [Server]
+        private RTSPlayer FindMayorPlayerForWorker()
+        {
+            if (!string.IsNullOrEmpty(ownerNickname))
+            {
+                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                {
+                    if (p != null && string.Equals(p.Nickname, ownerNickname, System.StringComparison.OrdinalIgnoreCase))
+                        return p;
+                }
+            }
+
+            if (ownerPlayerIndex >= 0)
+            {
+                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                {
+                    if (p != null && p.PlayerIndex == ownerPlayerIndex)
+                        return p;
+                }
+            }
+
+            return GetOwnerPlayer();
+        }
+
+        [Server]
+        private void ServerUpdatePlayerAutoDeposit()
+        {
+            if (Time.time < nextPlayerAutoDepositTime)
+                return;
+            nextPlayerAutoDepositTime = Time.time + 0.2f;
+
+            if (!IsAlive || InventoryTotal <= 0)
+                return;
+
+            var buildings = FindObjectsByType<Buildings.Building>(FindObjectsSortMode.None);
+            Buildings.Building nearestBuilding = null;
+            float nearestDist = float.MaxValue;
+
+            for (int i = 0; i < buildings.Length; i++)
+            {
+                var b = buildings[i];
+                if (b == null || !b.IsComplete)
+                    continue;
+                if (b.Type != Buildings.BuildingType.Capital && b.Type != Buildings.BuildingType.Warehouse)
+                    continue;
+                if (!b.IsSameOwner(ownerNickname, ownerPlayerIndex, ownerConnectionId))
+                    continue;
+
+                float dist = DistanceToBuildingSurface(b);
+                if (dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    nearestBuilding = b;
+                }
+            }
+
+            if (nearestBuilding != null && nearestDist <= 3.6f)
+            {
+                RTSPlayer mayor = FindMayorPlayerForWorker();
+                if (mayor != null)
+                {
+                    int depWood = inventoryWood;
+                    int depOre = inventoryOre;
+                    int depFood = inventoryFood;
+
+                    if (depWood > 0) { mayor.AddWood(depWood); inventoryWood = 0; }
+                    if (depOre > 0) { mayor.AddOre(depOre); inventoryOre = 0; }
+                    if (depFood > 0) { mayor.AddFood(depFood); inventoryFood = 0; }
+
+                    RpcShowDepositFloatingText(nearestBuilding.transform.position + Vector3.up * 2f, depWood, depOre, depFood);
+                    RpcNotifyPlayerWorkerDeposited(depWood, depOre, depFood);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void RpcNotifyPlayerWorkerDeposited(int wood, int ore, int food)
+        {
+            if (UnitPlayerController.Instance != null &&
+                UnitPlayerController.Instance.ControlledUnit == this)
+            {
+                if (RTSokak.UI.UnitPlayerHud.Instance != null)
+                {
+                    RTSokak.UI.UnitPlayerHud.Instance.OnPlayerDeposited(wood, ore, food);
+                }
+            }
+        }
 
         /// <summary>Worker hotbar: 0 Sword, 1 Axe, 2 Pickaxe, -1 empty. Всегда можно экипировать.</summary>
         [Server]
@@ -2417,7 +2517,10 @@ namespace RTSokak.Network
                 int amount = best.Harvest();
                 harvestingResourceType = best.Type;
                 if (amount > 0)
+                {
                     AddToInventory(best.Type, amount);
+                    RpcShowHarvestFloatingText(best.GetCenterPosition() + Vector3.up * 1.2f, best.Type, amount);
+                }
             }
 
             playerHarvestTarget = null;
@@ -2431,7 +2534,10 @@ namespace RTSokak.Network
                     {
                         int gained = garden.ServerHarvestAndReplant(playerGardenPlot);
                         if (gained > 0)
+                        {
                             AddToInventory(RTSokak.Resources.ResourceType.Food, gained);
+                            RpcShowHarvestFloatingText(transform.position + transform.forward * 1.2f + Vector3.up * 1.0f, RTSokak.Resources.ResourceType.Food, gained);
+                        }
                     }
                     else
                         garden.ServerPlant(playerGardenPlot);

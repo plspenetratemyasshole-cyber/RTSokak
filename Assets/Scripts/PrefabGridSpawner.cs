@@ -42,7 +42,7 @@ public class PrefabGridSpawner : MonoBehaviour
     {
         if (prefab == null)
         {
-            Debug.LogError("[PrefabGridSpawner] Prefab не назначен!");
+            Debug.LogError("[PrefabGridSpawner] Prefab is not assigned!");
             return;
         }
 
@@ -51,7 +51,7 @@ public class PrefabGridSpawner : MonoBehaviour
             cameraTransform = Camera.main?.transform;
             if (cameraTransform == null)
             {
-                Debug.LogWarning("[PrefabGridSpawner] Main Camera не найдена, LOD отключён");
+                Debug.LogWarning("[PrefabGridSpawner] Main Camera not found, LOD disabled");
                 useLOD = false;
             }
         }
@@ -67,7 +67,7 @@ public class PrefabGridSpawner : MonoBehaviour
         int cellsX = Mathf.CeilToInt(mapSize.x / cellSize);
         int cellsZ = Mathf.CeilToInt(mapSize.y / cellSize);
 
-        Debug.Log($"[PrefabGridSpawner] Создаём {cellsX}x{cellsZ} = {cellsX * cellsZ} экземпляров");
+        Debug.Log($"[PrefabGridSpawner] Creating {cellsX}x{cellsZ} = {cellsX * cellsZ} instances");
 
         for (int x = 0; x < cellsX; x++)
         {
@@ -77,7 +77,7 @@ public class PrefabGridSpawner : MonoBehaviour
             }
         }
 
-        Debug.Log($"[PrefabGridSpawner] Создано {spawnedObjects.Count} экземпляров");
+        Debug.Log($"[PrefabGridSpawner] Created {spawnedObjects.Count} instances");
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public class PrefabGridSpawner : MonoBehaviour
             }
         }
         spawnedObjects.Clear();
-        Debug.Log("[PrefabGridSpawner] Все экземпляры удалены");
+        Debug.Log("[PrefabGridSpawner] All instances removed");
     }
 
     /// <summary>

@@ -27,6 +27,31 @@ namespace RTSokak.Network
         private float nextShootTime;
         private float archerNextChaseRetargetTime;
         private GameObject crossbowInstance;
+
+        [SyncVar(hook = nameof(OnCrossbowEquippedChanged))]
+        private bool isCrossbowEquipped = true;
+
+        public override float GetPlayerActionCooldown() => shootCooldown;
+
+        private void OnCrossbowEquippedChanged(bool oldVal, bool newVal)
+        {
+            SetCrossbowVisual(newVal);
+        }
+
+        private void SetCrossbowVisual(bool show)
+        {
+            if (show)
+            {
+                CreateCrossbow();
+                if (crossbowInstance != null)
+                    crossbowInstance.SetActive(true);
+            }
+            else
+            {
+                if (crossbowInstance != null)
+                    crossbowInstance.SetActive(false);
+            }
+        }
         
         private enum ArcherCombatState
         {
@@ -55,7 +80,7 @@ namespace RTSokak.Network
             base.OnStartClient();
             CreateNameplate();
             ForceUpdateOutline();
-            CreateCrossbow();
+            SetCrossbowVisual(isCrossbowEquipped);
         }
         
         private void CreateCrossbow()
@@ -241,6 +266,7 @@ namespace RTSokak.Network
             Arrow arrow = arrowObj.GetComponent<Arrow>();
             if (arrow != null)
             {
+                arrow.SetShooter(this);
                 Vector3 shootDir = (predictedPos - spawnPos).normalized;
                 arrow.Initialize(spawnPos, predictedPos, hitTime, target.netId, arrowDamage, shootDir, shootRange);
             }
@@ -264,6 +290,7 @@ namespace RTSokak.Network
             Arrow arrow = arrowObj.GetComponent<Arrow>();
             if (arrow != null)
             {
+                arrow.SetShooter(this);
                 Vector3 shootDir = (targetPos - spawnPos).normalized;
                 NetworkIdentity targetIdentity = target.GetComponent<NetworkIdentity>();
                 uint targetId = targetIdentity != null ? targetIdentity.netId : 0;
@@ -278,6 +305,16 @@ namespace RTSokak.Network
         public override void ServerApplyHotbarSlot(int slotIndex)
         {
             playerHotbarSlot = slotIndex;
+            bool equip = (slotIndex == 0);
+            isCrossbowEquipped = equip;
+            SetCrossbowVisual(equip);
+            RpcSetCrossbowEquipped(equip);
+        }
+
+        [ClientRpc]
+        private void RpcSetCrossbowEquipped(bool equip)
+        {
+            SetCrossbowVisual(equip);
         }
 
         [Server]
@@ -291,19 +328,38 @@ namespace RTSokak.Network
                 return;
 
             rayDir = rayDir.normalized;
-            Vector3 spawnPos = rayOrigin;
-            Vector3 aimPoint = rayOrigin + rayDir * shootRange;
+            Vector3 spawnPos = rayOrigin + rayDir * 0.65f;
+            Vector3 aimPoint = rayOrigin + rayDir * (shootRange * 2f);
             uint targetId = 0;
 
-            if (Physics.Raycast(rayOrigin, rayDir, out RaycastHit hit, shootRange))
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, rayDir, shootRange * 2f, ~0, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            RaycastHit validHit = default;
+            bool foundHit = false;
+            for (int i = 0; i < hits.Length; i++)
             {
-                aimPoint = hit.point;
-                RTSUnit enemy = hit.collider.GetComponentInParent<RTSUnit>();
+                var col = hits[i].collider;
+                if (col == null) continue;
+                if (col.transform.IsChildOf(transform) || col.transform == transform)
+                    continue;
+
+                validHit = hits[i];
+                foundHit = true;
+                break;
+            }
+
+            if (foundHit)
+            {
+                aimPoint = validHit.point;
+                RTSUnit enemy = validHit.collider.GetComponentInParent<RTSUnit>();
                 if (enemy != null && enemy.IsAlive && !IsSameOwnerAs(enemy))
+                {
                     targetId = enemy.netId;
+                }
                 else
                 {
-                    Buildings.Building building = hit.collider.GetComponentInParent<Buildings.Building>();
+                    Buildings.Building building = validHit.collider.GetComponentInParent<Buildings.Building>();
                     if (building != null && building.CurrentHealth > 0 &&
                         building.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
                     {
@@ -320,7 +376,11 @@ namespace RTSokak.Network
             GameObject arrowObj = Instantiate(arrowPrefab, spawnPos, Quaternion.identity);
             Arrow arrow = arrowObj.GetComponent<Arrow>();
             if (arrow != null)
-                arrow.Initialize(spawnPos, aimPoint, hitTime, targetId, arrowDamage, rayDir, shootRange);
+            {
+                arrow.SetShooter(this);
+                Vector3 shootDir = (aimPoint - spawnPos).normalized;
+                arrow.Initialize(spawnPos, aimPoint, hitTime, targetId, arrowDamage, shootDir, shootRange * 2.5f);
+            }
             NetworkServer.Spawn(arrowObj);
             RpcShootVisual(aimPoint);
         }
@@ -395,7 +455,8 @@ namespace RTSokak.Network
         [ClientRpc(includeOwner = true)]
         private void RpcShootVisual(Vector3 targetPos)
         {
-            FaceTarget(targetPos);
+            if (!IsPlayerControlled)
+                FaceTarget(targetPos);
         }
 
         [Server]

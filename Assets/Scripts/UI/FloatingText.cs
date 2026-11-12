@@ -34,11 +34,27 @@ namespace RTSokak.UI
             {
                 originalColor = textComponent.color;
             }
+
+            if (rectTransform != null)
+            {
+                rectTransform.localScale = new Vector3(0.5f, 0.5f, 1f);
+            }
+        }
+
+        public static UnityEngine.Camera ResolveActiveCamera()
+        {
+            if (RTSokak.Network.UnitPlayerController.Instance != null &&
+                RTSokak.Network.UnitPlayerController.Instance.IsActive &&
+                RTSokak.Network.UnitPlayerController.Instance.FpsCamera != null)
+            {
+                return RTSokak.Network.UnitPlayerController.Instance.FpsCamera;
+            }
+            return UnityEngine.Camera.main;
         }
 
         private void Start()
         {
-            mainCamera = UnityEngine.Camera.main;
+            mainCamera = ResolveActiveCamera();
             spawnTime = Time.time;
             
             // Добавляем случайное смещение
@@ -55,11 +71,8 @@ namespace RTSokak.UI
 
         private void Update()
         {
-            if (mainCamera == null)
-            {
-                mainCamera = UnityEngine.Camera.main;
-                if (mainCamera == null) return;
-            }
+            mainCamera = ResolveActiveCamera();
+            if (mainCamera == null) return;
 
             float elapsed = Time.time - spawnTime;
 
@@ -68,6 +81,23 @@ namespace RTSokak.UI
             {
                 Destroy(gameObject);
                 return;
+            }
+
+            // Анимация масштаба (scale punch): 0.5 -> 1.15 -> 1.0 за первые 0.18 сек
+            if (rectTransform != null)
+            {
+                if (elapsed < 0.18f)
+                {
+                    float t = elapsed / 0.18f;
+                    float s = t < 0.65f
+                        ? Mathf.Lerp(0.5f, 1.15f, t / 0.65f)
+                        : Mathf.Lerp(1.15f, 1.0f, (t - 0.65f) / 0.35f);
+                    rectTransform.localScale = new Vector3(s, s, 1f);
+                }
+                else if (rectTransform.localScale != Vector3.one)
+                {
+                    rectTransform.localScale = Vector3.one;
+                }
             }
 
             // Двигаем world position вверх
@@ -153,7 +183,7 @@ namespace RTSokak.UI
             ft.Initialize(worldPos, text, color);
             
             // СРАЗУ установить экранную позицию чтобы не было телепортации
-            UnityEngine.Camera mainCam = UnityEngine.Camera.main;
+            UnityEngine.Camera mainCam = ResolveActiveCamera();
             if (mainCam != null)
             {
                 Vector3 screenPos = mainCam.WorldToScreenPoint(worldPos);

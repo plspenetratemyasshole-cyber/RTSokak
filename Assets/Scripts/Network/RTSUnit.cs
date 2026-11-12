@@ -2033,9 +2033,13 @@ namespace RTSokak.Network
         }
 
         /// <summary>Хотбар юнита-игрока: -1 = пустые руки. Worker: 0 Sword, 1 Axe, 2 Pickaxe.</summary>
+        [SyncVar]
         protected int playerHotbarSlot = -1;
 
         public int PlayerHotbarSlot => playerHotbarSlot;
+
+        /// <summary>Кулдаун действия юнита-игрока (для индикатора под прицелом).</summary>
+        public virtual float GetPlayerActionCooldown() => attackCooldown;
 
         [Server]
         public virtual void ServerApplyHotbarSlot(int slotIndex)

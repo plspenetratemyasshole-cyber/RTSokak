@@ -914,8 +914,16 @@ namespace RTSokak.Network
 
         private void TryPrimaryAction()
         {
-            if (fpsCamera == null || RTSPlayer.localPlayer == null)
+            if (fpsCamera == null || RTSPlayer.localPlayer == null || controlledUnit == null)
                 return;
+
+            if (RTSokak.UI.UnitPlayerHud.Instance == null || RTSokak.UI.UnitPlayerHud.Instance.SelectedSlot < 0)
+                return;
+
+            if (RTSokak.UI.UnitPlayerHud.Instance.IsOnCooldown)
+                return;
+
+            RTSokak.UI.UnitPlayerHud.Instance.TriggerCooldown(controlledUnit.GetPlayerActionCooldown());
 
             Ray ray = fpsCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             RTSPlayer.localPlayer.CmdUnitPlayerPrimary(controlledUnit.netId, ray.origin, ray.direction);
