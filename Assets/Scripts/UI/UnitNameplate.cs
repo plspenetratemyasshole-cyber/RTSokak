@@ -19,7 +19,9 @@ namespace RTSokak.UI
         [SerializeField] private float fontSize = 18f; // Размер шрифта (измени в инспекторе)
 
         private Transform targetUnit;
+        private RTSokak.Network.RTSUnit cachedUnit;
         private UnityEngine.Camera mainCamera;
+        private Vector3 lastPos = Vector3.positiveInfinity;
 
         private void Awake()
         {
@@ -77,16 +79,38 @@ namespace RTSokak.UI
                 if (culled)
                     return;
             }
-            else if (canvas != null && !canvas.enabled)
+            else
             {
-                canvas.enabled = true;
+                if (cachedUnit == null && targetUnit != null)
+                    cachedUnit = targetUnit.GetComponent<RTSokak.Network.RTSUnit>();
+
+                bool isSelected = cachedUnit != null && cachedUnit.IsSelected;
+                float distSqr = (targetUnit.position - mainCamera.transform.position).sqrMagnitude;
+                bool inRange = distSqr <= 35f * 35f;
+
+                bool show = isSelected || inRange;
+                if (canvas != null && canvas.enabled != show)
+                    canvas.enabled = show;
+
+                if (!show)
+                    return;
             }
 
             if (canvas != null && canvas.worldCamera != mainCamera)
                 canvas.worldCamera = mainCamera;
 
-            transform.position = targetUnit.position + offset;
-            transform.rotation = mainCamera.transform.rotation;
+            Vector3 targetPos = targetUnit.position + offset;
+            if ((targetPos - lastPos).sqrMagnitude > 0.0001f)
+            {
+                transform.position = targetPos;
+                lastPos = targetPos;
+            }
+
+            Quaternion camRot = mainCamera.transform.rotation;
+            if (Quaternion.Angle(transform.rotation, camRot) > 0.1f)
+            {
+                transform.rotation = camRot;
+            }
         }
 
         /// <summary>
@@ -95,6 +119,8 @@ namespace RTSokak.UI
         public void SetTarget(Transform unit)
         {
             targetUnit = unit;
+            cachedUnit = unit != null ? unit.GetComponent<RTSokak.Network.RTSUnit>() : null;
+            lastPos = Vector3.positiveInfinity;
         }
 
         /// <summary>

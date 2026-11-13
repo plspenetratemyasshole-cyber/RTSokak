@@ -88,6 +88,10 @@ namespace RTSokak.Network
 
             kcp.enabled = true;
             kcp.Port = PlayerSession.Port;
+            kcp.NoDelay = true;
+            kcp.Interval = 10;
+            kcp.FastResend = 2;
+            networkManager.sendRate = 30;
             networkManager.transport = kcp;
             Transport.active = kcp;
 

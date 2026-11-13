@@ -33,7 +33,7 @@ namespace RTSokak.Network
         [SerializeField] private LayerMask collisionMask = ~0;
 
         [Header("Net")]
-        [SerializeField] private float moveSendRate = 12f;
+        [SerializeField] private float moveSendRate = 30f;
 
         [Header("Fog (экранный — видно на всех объектах)")]
         [SerializeField] private bool enableUnitFog = false;
@@ -119,11 +119,16 @@ namespace RTSokak.Network
 
         public void ApplyKnockback(Vector3 impulse)
         {
-            knockbackVelocity = new Vector3(impulse.x, 0f, impulse.z) * 2.4f;
-            verticalVel = Mathf.Max(verticalVel, impulse.y * 3.0f);
-            grounded = false;
-            knockbackUngroundTimer = 0.16f;
-            nextMoveSendTime = 0f; // сразу отправить начало отлёта на сервер
+            Vector3 horiz = new Vector3(impulse.x, 0f, impulse.z);
+            if (horiz.magnitude > 4.2f)
+                horiz = horiz.normalized * 4.2f;
+
+            knockbackVelocity = horiz * 0.85f; // Никаких * 2.4f!
+            // Не подбрасываем игрока высоко в воздух, чтобы не терять управление:
+            if (grounded)
+                verticalVel = Mathf.Min(2.2f, impulse.y * 0.75f);
+            knockbackUngroundTimer = 0.05f;
+            nextMoveSendTime = 0f;
         }
 
         public float MouseSensitivity
@@ -624,6 +629,8 @@ namespace RTSokak.Network
                 return;
             }
 
+            UnitPlayerHud.Ensure().TickHud(controlledUnit);
+
             if (Time.time >= nextOutlineRefreshTime)
             {
                 nextOutlineRefreshTime = Time.time + 2.0f;
@@ -749,7 +756,7 @@ namespace RTSokak.Network
                 grounded = false;
             }
 
-            float inputScale = knockbackVelocity.sqrMagnitude > 0.5f ? 0.3f : 1f;
+            float inputScale = knockbackVelocity.sqrMagnitude > 0.5f ? 0.75f : 1f;
             Vector3 totalWish = wish * inputScale + knockbackVelocity * Time.deltaTime;
             Vector3 horizontal = ResolveHorizontalMove(before, totalWish);
             Vector3 pos = before + horizontal;
@@ -810,7 +817,7 @@ namespace RTSokak.Network
 
             if (knockbackVelocity.sqrMagnitude > 0.0001f)
             {
-                float damping = grounded ? 18f : 7.5f;
+                float damping = grounded ? 24f : 16f;
                 knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, damping * Time.deltaTime);
             }
 
@@ -822,7 +829,7 @@ namespace RTSokak.Network
             bool yawChanged = Mathf.Abs(Mathf.DeltaAngle(lastSentYaw, yaw)) > 1.5f;
             if (Time.time >= nextMoveSendTime && RTSPlayer.localPlayer != null && (movedEnough || yawChanged))
             {
-                nextMoveSendTime = Time.time + 1f / Mathf.Max(6f, moveSendRate);
+                nextMoveSendTime = Time.time + 1f / Mathf.Max(20f, moveSendRate);
                 lastSentPos = pos;
                 lastSentYaw = yaw;
                 RTSPlayer.localPlayer.CmdUnitPlayerMove(controlledUnit.netId, pos, yaw);
@@ -1090,6 +1097,9 @@ namespace RTSokak.Network
             if (objs == null || objs.Length == 0)
                 return;
 
+            Transform toolHold = unit.ToolHoldPoint;
+            Transform camAnchor = unit.UnitPlayerCameraAnchor;
+
             var list = new System.Collections.Generic.List<GameObject>(objs.Length);
             var flags = new System.Collections.Generic.List<bool>(objs.Length);
             for (int i = 0; i < objs.Length; i++)
@@ -1097,6 +1107,12 @@ namespace RTSokak.Network
                 GameObject go = objs[i];
                 if (go == null)
                     continue;
+
+                if (toolHold != null && (go == toolHold.gameObject || toolHold.IsChildOf(go.transform)))
+                    continue;
+                if (camAnchor != null && (go == camAnchor.gameObject || camAnchor.IsChildOf(go.transform)))
+                    continue;
+
                 list.Add(go);
                 flags.Add(go.activeSelf);
                 go.SetActive(false);
@@ -1109,10 +1125,21 @@ namespace RTSokak.Network
         {
             if (hiddenObjects == null)
                 return;
+
+            Transform toolHold = controlledUnit != null ? controlledUnit.ToolHoldPoint : null;
+            Transform camAnchor = controlledUnit != null ? controlledUnit.UnitPlayerCameraAnchor : null;
+
             for (int i = 0; i < hiddenObjects.Length; i++)
             {
-                if (hiddenObjects[i] != null && hiddenObjects[i].activeSelf)
-                    hiddenObjects[i].SetActive(false);
+                GameObject go = hiddenObjects[i];
+                if (go != null && go.activeSelf)
+                {
+                    if (toolHold != null && (go == toolHold.gameObject || toolHold.IsChildOf(go.transform)))
+                        continue;
+                    if (camAnchor != null && (go == camAnchor.gameObject || camAnchor.IsChildOf(go.transform)))
+                        continue;
+                    go.SetActive(false);
+                }
             }
         }
 

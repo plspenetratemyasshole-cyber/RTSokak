@@ -50,11 +50,13 @@ namespace RTSokak.EditorTools
             var crt = cross.GetComponent<RectTransform>();
             crt.anchorMin = crt.anchorMax = new Vector2(0.5f, 0.5f);
             crt.sizeDelta = new Vector2(4f, 4f);
-            cross.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.85f);
-            cross.GetComponent<Image>().raycastTarget = false;
+            var crossImg = cross.GetComponent<Image>();
+            crossImg.sprite = GetWhiteSprite();
+            crossImg.color = new Color(1f, 1f, 1f, 0.85f);
+            crossImg.raycastTarget = false;
 
             // Resources above health bar
-            GameObject resGo = new GameObject("Resources", typeof(RectTransform));
+            GameObject resGo = new GameObject("ResourcesText", typeof(RectTransform));
             resGo.transform.SetParent(hudRoot.transform, false);
             var rrt = resGo.GetComponent<RectTransform>();
             rrt.anchorMin = new Vector2(0.5f, 0f);
@@ -90,6 +92,11 @@ namespace RTSokak.EditorTools
             fillRt.offsetMin = new Vector2(2f, 2f);
             fillRt.offsetMax = new Vector2(-2f, -2f);
             var fillImg = fillGo.GetComponent<Image>();
+            fillImg.sprite = GetWhiteSprite();
+            fillImg.type = Image.Type.Filled;
+            fillImg.fillMethod = Image.FillMethod.Horizontal;
+            fillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+            fillImg.fillAmount = 1f;
             fillImg.color = new Color(0.2f, 0.85f, 0.3f, 1f);
             fillImg.raycastTarget = false;
 
@@ -141,6 +148,12 @@ namespace RTSokak.EditorTools
             rt.anchorMax = Vector2.one;
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
+        }
+
+        private static Sprite GetWhiteSprite()
+        {
+            Texture2D tex = Texture2D.whiteTexture;
+            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
         }
     }
 }

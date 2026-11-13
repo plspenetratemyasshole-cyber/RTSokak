@@ -78,8 +78,10 @@ namespace RTSokak.UI
             var local = RTSPlayer.localPlayer;
             if (local == null)
             {
-                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                var all = RTSPlayer.AllPlayers;
+                for (int i = 0; i < all.Count; i++)
                 {
+                    var p = all[i];
                     if (p != null && p.isLocalPlayer)
                         return p;
                 }
@@ -119,8 +121,10 @@ namespace RTSokak.UI
             }
 
             RTSPlayer fallbackMayor = null;
-            foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
+                var p = all[i];
                 if (p == null || p.Role != PlayerRole.MayorPlaying)
                     continue;
 

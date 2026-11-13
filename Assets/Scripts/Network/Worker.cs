@@ -52,6 +52,9 @@ namespace RTSokak.Network
         [SyncVar(hook = nameof(OnInventoryFoodChanged))]
         private int inventoryFood;
 
+        private RTSPlayer cachedOwnerPlayer;
+        private float nextOwnerPlayerResolveTime;
+
         public WorkerProfession Profession => profession;
         public int InventoryWood => inventoryWood;
         public int InventoryOre => inventoryOre;
@@ -432,34 +435,6 @@ namespace RTSokak.Network
                 UpdateOutline();
             }
 
-            // В FPS юнит-игрока линии путей всем юнитам не рисуем — дорого
-            bool unitPlaying = RTSPlayer.localPlayer != null &&
-                               RTSPlayer.localPlayer.Role == PlayerRole.UnitPlaying;
-            if (unitPlaying)
-            {
-                if (pathLine != null)
-                    pathLine.enabled = false;
-            }
-            else if (isSelected && IsOwned && syncedDestination != Vector3.zero)
-            {
-                float distXZ = HorizontalDistance(transform.position, syncedDestination);
-                if (distXZ > 0.75f)
-                {
-                    if (navAgent != null && navAgent.enabled && navAgent.hasPath)
-                        DrawPath();
-                    else
-                        UpdatePathVisualization(syncedDestination);
-                }
-                else if (pathLine != null)
-                {
-                    pathLine.enabled = false;
-                }
-            }
-            else if (pathLine != null)
-            {
-                pathLine.enabled = false;
-            }
-
             // Анимируем инструмент если он активен (на ВСЕХ клиентах, не только сервере)
             if (isAnimatingTool)
             {
@@ -817,7 +792,7 @@ namespace RTSokak.Network
 
         static RTSokak.Resources.Resource FindResourceAt(int gridX, int gridZ)
         {
-            var rm = Object.FindFirstObjectByType<RTSokak.Resources.ResourceManager>();
+            var rm = RTSokak.Resources.ResourceManager.Instance;
             if (rm != null)
             {
                 var at = rm.GetResourceAt(new Vector2Int(gridX, gridZ));
@@ -825,8 +800,10 @@ namespace RTSokak.Network
                     return at;
             }
 
-            foreach (var r in Object.FindObjectsByType<RTSokak.Resources.Resource>(FindObjectsSortMode.None))
+            var allRes = RTSokak.Resources.Resource.AllResources;
+            for (int i = 0; i < allRes.Count; i++)
             {
+                var r = allRes[i];
                 if (r != null && !r.IsHarvested &&
                     r.gridPosition.x == gridX && r.gridPosition.y == gridZ)
                     return r;
@@ -838,8 +815,10 @@ namespace RTSokak.Network
         {
             RTSokak.Buildings.Building best = null;
             float bestDist = 3f;
-            foreach (var b in Object.FindObjectsByType<RTSokak.Buildings.Building>(FindObjectsSortMode.None))
+            var allB = RTSokak.Buildings.Building.AllBuildings;
+            for (int i = 0; i < allB.Count; i++)
             {
+                var b = allB[i];
                 if (b == null || b.Type != type) continue;
                 float d = Vector3.Distance(b.FinalPosition, pos);
                 if (d < bestDist)
@@ -855,8 +834,12 @@ namespace RTSokak.Network
         {
             RTSokak.Buildings.GardenBed best = null;
             float bestDist = 3f;
-            foreach (var g in Object.FindObjectsByType<RTSokak.Buildings.GardenBed>(FindObjectsSortMode.None))
+            var allB = RTSokak.Buildings.Building.AllBuildings;
+            for (int i = 0; i < allB.Count; i++)
             {
+                var b = allB[i];
+                if (b == null) continue;
+                var g = b.GetComponent<RTSokak.Buildings.GardenBed>();
                 if (g == null) continue;
                 float d = Vector3.Distance(g.transform.position, pos);
                 if (d < bestDist)
@@ -1262,13 +1245,28 @@ namespace RTSokak.Network
         [Server]
         private RTSPlayer GetOwnerPlayer()
         {
-            if (connectionToClient != null && connectionToClient.identity != null)
-                return connectionToClient.identity.GetComponent<RTSPlayer>();
+            if (cachedOwnerPlayer != null && Time.time < nextOwnerPlayerResolveTime)
+                return cachedOwnerPlayer;
 
-            foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            cachedOwnerPlayer = null;
+            nextOwnerPlayerResolveTime = Time.time + 1f;
+
+            if (connectionToClient != null && connectionToClient.identity != null)
             {
-                if (p.ConnectionId == ownerConnectionId)
+                cachedOwnerPlayer = connectionToClient.identity.GetComponent<RTSPlayer>();
+                if (cachedOwnerPlayer != null)
+                    return cachedOwnerPlayer;
+            }
+
+            var allPlayers = RTSPlayer.AllPlayers;
+            for (int i = 0; i < allPlayers.Count; i++)
+            {
+                var p = allPlayers[i];
+                if (p != null && p.ConnectionId == ownerConnectionId)
+                {
+                    cachedOwnerPlayer = p;
                     return p;
+                }
             }
 
             return null;
@@ -2347,10 +2345,12 @@ namespace RTSokak.Network
         [Server]
         private RTSPlayer FindMayorPlayerForWorker()
         {
+            var allPlayers = RTSPlayer.AllPlayers;
             if (!string.IsNullOrEmpty(ownerNickname))
             {
-                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                for (int i = 0; i < allPlayers.Count; i++)
                 {
+                    var p = allPlayers[i];
                     if (p != null && string.Equals(p.Nickname, ownerNickname, System.StringComparison.OrdinalIgnoreCase))
                         return p;
                 }
@@ -2358,8 +2358,9 @@ namespace RTSokak.Network
 
             if (ownerPlayerIndex >= 0)
             {
-                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                for (int i = 0; i < allPlayers.Count; i++)
                 {
+                    var p = allPlayers[i];
                     if (p != null && p.PlayerIndex == ownerPlayerIndex)
                         return p;
                 }
@@ -2432,6 +2433,51 @@ namespace RTSokak.Network
             }
         }
 
+        public override void ApplyLocalPlayerHotbarVisual(int slotIndex)
+        {
+            playerHotbarSlot = slotIndex;
+            if (slotIndex < 0)
+            {
+                SetActiveToolVisual(-1);
+                SetSwordEquippedVisual(false);
+            }
+            else if (slotIndex == 0)
+            {
+                SetActiveToolVisual(-1);
+                SetSwordEquippedVisual(true);
+            }
+            else if (slotIndex == 1)
+            {
+                SetSwordEquippedVisual(false);
+                SetActiveToolVisual(0); // Axe
+            }
+            else if (slotIndex == 2)
+            {
+                SetSwordEquippedVisual(false);
+                SetActiveToolVisual(1); // Pickaxe
+            }
+        }
+
+        public void SetActiveToolVisual(int toolType)
+        {
+            if (currentToolInstance != null)
+            {
+                Destroy(currentToolInstance);
+                currentToolInstance = null;
+            }
+            isAnimatingTool = false;
+            if (toolType >= 0)
+            {
+                CreateToolInstance(toolType);
+            }
+        }
+
+        [ClientRpc]
+        private void RpcSetActiveTool(int toolType)
+        {
+            SetActiveToolVisual(toolType);
+        }
+
         /// <summary>Worker hotbar: 0 Sword, 1 Axe, 2 Pickaxe, -1 empty. Всегда можно экипировать.</summary>
         [Server]
         public override void ServerApplyHotbarSlot(int slotIndex)
@@ -2441,26 +2487,27 @@ namespace RTSokak.Network
 
             if (slotIndex < 0)
             {
-                DestroyHarvestTool();
+                activeToolType = -1;
+                SetActiveToolVisual(-1);
+                RpcSetActiveTool(-1);
                 EquipSword(false);
                 return;
             }
 
             if (slotIndex == 0)
             {
-                DestroyHarvestTool();
                 activeToolType = -1;
+                SetActiveToolVisual(-1);
+                RpcSetActiveTool(-1);
                 EquipSword(true);
                 return;
             }
 
             EquipSword(false);
-            if (slotIndex == 1)
-                activeToolType = 0; // axe
-            else if (slotIndex == 2)
-                activeToolType = 1; // pickaxe
-            else
-                activeToolType = -1;
+            int tool = slotIndex == 1 ? 0 : (slotIndex == 2 ? 1 : -1);
+            activeToolType = tool;
+            SetActiveToolVisual(tool);
+            RpcSetActiveTool(tool);
         }
 
         [Server]
@@ -2584,18 +2631,30 @@ namespace RTSokak.Network
             playerGardenPlot = -1;
 
             Vector3 dir = rayDir.sqrMagnitude > 0.0001f ? rayDir.normalized : transform.forward;
-            if (Physics.Raycast(rayOrigin, dir, out RaycastHit hit, 5f))
+            RaycastHit[] hits = Physics.RaycastAll(rayOrigin, dir, 5.5f, ~0, QueryTriggerInteraction.Ignore);
+            if (hits != null && hits.Length > 1)
+                System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            if (hits != null)
             {
-                var res = hit.collider.GetComponentInParent<RTSokak.Resources.Resource>();
-                if (res != null && !res.IsHarvested && res.Type == playerHarvestType)
+                for (int i = 0; i < hits.Length; i++)
                 {
-                    var ni = res.GetComponent<NetworkIdentity>();
-                    if (ni != null)
-                        playerHarvestTarget = ni;
-                }
-                else
-                {
-                    var garden = hit.collider.GetComponentInParent<RTSokak.Buildings.GardenBed>();
+                    Collider col = hits[i].collider;
+                    if (col == null || col.transform.IsChildOf(transform) || col.transform == transform)
+                        continue;
+
+                    var res = col.GetComponentInParent<RTSokak.Resources.Resource>();
+                    if (res != null && !res.IsHarvested && res.Type == playerHarvestType)
+                    {
+                        var ni = res.GetComponent<NetworkIdentity>();
+                        if (ni != null)
+                        {
+                            playerHarvestTarget = ni;
+                            break;
+                        }
+                    }
+
+                    var garden = col.GetComponentInParent<RTSokak.Buildings.GardenBed>();
                     if (garden != null && garden.TryGetNextWorkNear(transform.position, out int plot, out bool harvest))
                     {
                         var ni = garden.GetComponent<NetworkIdentity>();
@@ -2604,6 +2663,7 @@ namespace RTSokak.Network
                             playerGardenTarget = ni;
                             playerGardenPlot = plot;
                             playerGardenIsHarvest = harvest;
+                            break;
                         }
                     }
                 }
@@ -2612,15 +2672,15 @@ namespace RTSokak.Network
             // Ближайший ресурс у ног, если прицел мимо
             if (playerHarvestTarget == null && playerGardenTarget == null)
             {
-                Collider[] cols = Physics.OverlapSphere(transform.position, harvestDistanceTolerance);
                 float bestDist = float.MaxValue;
-                for (int i = 0; i < cols.Length; i++)
+                var allRes = RTSokak.Resources.Resource.AllResources;
+                for (int i = 0; i < allRes.Count; i++)
                 {
-                    var res = cols[i].GetComponentInParent<RTSokak.Resources.Resource>();
+                    var res = allRes[i];
                     if (res == null || res.IsHarvested || res.Type != playerHarvestType)
                         continue;
                     float d = Vector3.Distance(transform.position, res.GetCenterPosition());
-                    if (d < bestDist)
+                    if (d <= harvestDistanceTolerance && d < bestDist)
                     {
                         bestDist = d;
                         playerHarvestTarget = res.GetComponent<NetworkIdentity>();

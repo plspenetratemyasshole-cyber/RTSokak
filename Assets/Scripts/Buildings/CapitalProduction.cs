@@ -233,9 +233,11 @@ namespace RTSokak.Buildings
 
         private static RTSPlayer FindPlayer(int connId)
         {
-            foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
-                if (p.ConnectionId == connId)
+                var p = all[i];
+                if (p != null && p.ConnectionId == connId)
                     return p;
             }
 

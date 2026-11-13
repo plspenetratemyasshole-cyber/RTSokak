@@ -17,6 +17,10 @@ namespace RTSokak.UI
         [SerializeField] private Vector2 barSize = new Vector2(0.1f, 0.015f);
 
         private Transform targetTransform;
+        private bool isTargetBuilding;
+        private RTSokak.Network.RTSUnit targetUnit;
+        private RTSokak.Buildings.Building targetBuilding;
+        private Vector3 lastPos;
         private UnityEngine.Camera mainCamera;
         private Canvas cachedCanvas;
         private bool useFixedWorldPosition;
@@ -142,6 +146,9 @@ namespace RTSokak.UI
             bar.barSize = size;
             bar.healthGradient = EnsureGradient(gradient);
             bar.targetTransform = target;
+            bar.isTargetBuilding = target != null && target.GetComponent<RTSokak.Buildings.Building>() != null;
+            bar.targetUnit = target != null ? target.GetComponent<RTSokak.Network.RTSUnit>() : null;
+            bar.targetBuilding = bar.isTargetBuilding ? target.GetComponent<RTSokak.Buildings.Building>() : null;
             bar.mainCamera = UnityEngine.Camera.main;
             rootRect.sizeDelta = size;
             bar.UpdateHealthBar(1f);
@@ -197,6 +204,9 @@ namespace RTSokak.UI
         public void Initialize(Transform target, Vector3 customOffset)
         {
             targetTransform = target;
+            isTargetBuilding = target != null && target.GetComponent<RTSokak.Buildings.Building>() != null;
+            targetUnit = target != null ? target.GetComponent<RTSokak.Network.RTSUnit>() : null;
+            targetBuilding = isTargetBuilding ? target.GetComponent<RTSokak.Buildings.Building>() : null;
             offset = customOffset;
             healthGradient = EnsureGradient(healthGradient);
             if (backgroundImage != null)
@@ -281,24 +291,48 @@ namespace RTSokak.UI
             {
                 Vector3 p = useFixedWorldPosition ? fixedWorldPosition
                     : (targetTransform != null ? targetTransform.position : transform.position);
-                bool isBuilding = useFixedWorldPosition || (targetTransform != null && targetTransform.GetComponent<RTSokak.Buildings.Building>() != null);
+                bool isBuilding = useFixedWorldPosition || isTargetBuilding;
                 bool culled = upc.ShouldCullHealthBar(p, isBuilding);
                 if (cachedCanvas != null && cachedCanvas.enabled == culled)
                     cachedCanvas.enabled = !culled;
                 if (culled)
                     return;
             }
-            else if (cachedCanvas != null && !cachedCanvas.enabled)
+            else
             {
-                cachedCanvas.enabled = true;
+                // В RTS-режиме скрываем, если полное здоровье И объект не выделен
+                bool isSelected = (targetUnit != null && targetUnit.IsSelected) ||
+                                  (targetBuilding != null && targetBuilding.IsSelected);
+                bool isFullHp = healthSlider != null && healthSlider.value >= 0.999f;
+
+                if (!useFixedWorldPosition && isFullHp && !isSelected)
+                {
+                    if (cachedCanvas != null && cachedCanvas.enabled)
+                        cachedCanvas.enabled = false;
+                    return;
+                }
+                else if (cachedCanvas != null && !cachedCanvas.enabled)
+                {
+                    cachedCanvas.enabled = true;
+                }
             }
 
-            transform.position = useFixedWorldPosition
+            Vector3 newPos = useFixedWorldPosition
                 ? fixedWorldPosition
                 : targetTransform.position + offset;
 
+            if ((newPos - lastPos).sqrMagnitude > 0.0001f)
+            {
+                transform.position = newPos;
+                lastPos = newPos;
+            }
+
             if (mainCamera != null)
-                transform.rotation = mainCamera.transform.rotation;
+            {
+                Quaternion camRot = mainCamera.transform.rotation;
+                if (Quaternion.Angle(transform.rotation, camRot) > 0.1f)
+                    transform.rotation = camRot;
+            }
         }
 
         /// <summary>FPS камера юнита-игрока, иначе Camera.main.</summary>

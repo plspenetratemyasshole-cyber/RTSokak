@@ -193,7 +193,7 @@ namespace RTSokak.Resources
 
                 try
                 {
-                    ResourceManager manager = FindFirstObjectByType<ResourceManager>();
+                    ResourceManager manager = ResourceManager.Instance;
                     if (manager != null)
                     {
                         manager.UnregisterResource(this);
@@ -217,7 +217,7 @@ namespace RTSokak.Resources
         {
             try
             {
-                ResourceManager manager = FindFirstObjectByType<ResourceManager>();
+                ResourceManager manager = ResourceManager.Instance;
                 if (manager != null)
                 {
                     manager.PlayHarvestParticles(resourceType, hitPos);

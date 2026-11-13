@@ -11,6 +11,23 @@ namespace RTSokak.Network
     public class RTSPlayer : NetworkBehaviour
     {
         public static RTSPlayer localPlayer { get; private set; }
+        public static readonly System.Collections.Generic.List<RTSPlayer> AllPlayers = new System.Collections.Generic.List<RTSPlayer>();
+
+        private void OnEnable()
+        {
+            if (!AllPlayers.Contains(this))
+                AllPlayers.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            AllPlayers.Remove(this);
+        }
+
+        private void OnDestroy()
+        {
+            AllPlayers.Remove(this);
+        }
 
         [Header("Starting Resources")]
         [SerializeField] private int startingWood = 100;
@@ -164,6 +181,17 @@ namespace RTSokak.Network
                     RTSokak.UI.DebugCheatUI.EnsureExists();
             }
         }
+
+        public override void OnStartLocalPlayer()
+        {
+            base.OnStartLocalPlayer();
+            localPlayer = this;
+            NotifyStatsChanged();
+            RefreshAllUnitOutlines();
+            RTSokak.UI.PlayerRoleUI.NotifyLocalRoleChanged(this, playerRole);
+            if (controlledUnitNetId != 0)
+                RTSokak.UI.PlayerRoleUI.NotifyLocalControlledUnitChanged(this, controlledUnitNetId);
+        }
         
         public override void OnStartClient()
         {
@@ -190,15 +218,15 @@ namespace RTSokak.Network
         /// </summary>
         private void RefreshAllUnitOutlines()
         {
-            RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-            for (int i = 0; i < units.Length; i++)
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
             {
                 if (units[i] != null)
                     units[i].ForceUpdateOutline();
             }
 
-            Buildings.Building[] buildings = FindObjectsByType<Buildings.Building>(FindObjectsSortMode.None);
-            for (int i = 0; i < buildings.Length; i++)
+            var buildings = Buildings.Building.AllBuildings;
+            for (int i = 0; i < buildings.Count; i++)
             {
                 if (buildings[i] != null)
                     buildings[i].ForceUpdateOutline();
@@ -326,8 +354,8 @@ namespace RTSokak.Network
         {
             if (string.IsNullOrEmpty(nickname))
                 return;
-            RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-            for (int i = 0; i < units.Length; i++)
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
             {
                 RTSUnit u = units[i];
                 if (u == null || !u.IsPlayerControlled || !u.IsOwnedByNickname(nickname))
@@ -345,9 +373,10 @@ namespace RTSokak.Network
         [Server]
         void ServerWipeOwnedUnits()
         {
-            RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-            for (int i = 0; i < units.Length; i++)
+            var units = RTSUnit.AllUnits;
+            for (int i = units.Count - 1; i >= 0; i--)
             {
+                if (i >= units.Count) continue;
                 RTSUnit u = units[i];
                 if (u == null) continue;
                 bool mine = (!string.IsNullOrEmpty(nickname) && u.IsOwnedByNickname(nickname))
@@ -362,9 +391,10 @@ namespace RTSokak.Network
         public static void ServerOfflineMayorDefeat(string nick, int ownerConnId)
         {
             // Снести здания
-            Building[] buildings = FindObjectsByType<Building>(FindObjectsSortMode.None);
-            for (int i = 0; i < buildings.Length; i++)
+            var buildings = Building.AllBuildings;
+            for (int i = buildings.Count - 1; i >= 0; i--)
             {
+                if (i >= buildings.Count) continue;
                 Building b = buildings[i];
                 if (b == null) continue;
                 bool mine = (!string.IsNullOrEmpty(nick) && b.IsOwnedByNickname(nick))
@@ -374,9 +404,10 @@ namespace RTSokak.Network
             }
 
             // Снести юнитов (и отпустить unit-players)
-            RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-            for (int i = 0; i < units.Length; i++)
+            var units = RTSUnit.AllUnits;
+            for (int i = units.Count - 1; i >= 0; i--)
             {
+                if (i >= units.Count) continue;
                 RTSUnit u = units[i];
                 if (u == null) continue;
                 bool mine = (!string.IsNullOrEmpty(nick) && u.IsOwnedByNickname(nick))
@@ -462,10 +493,11 @@ namespace RTSokak.Network
         /// </summary>
         public Building FindCapital()
         {
-            Building[] all = FindObjectsByType<Building>(FindObjectsSortMode.None);
+            var all = Building.AllBuildings;
             Building best = null;
-            foreach (var b in all)
+            for (int i = 0; i < all.Count; i++)
             {
+                var b = all[i];
                 if (b == null || b.Type != BuildingType.Capital)
                     continue;
                 bool mine = (!string.IsNullOrEmpty(nickname) && b.IsOwnedByNickname(nickname))
@@ -485,11 +517,11 @@ namespace RTSokak.Network
         /// </summary>
         public Building FindNearestDepositBuilding(Vector3 fromWorld)
         {
-            Building[] all = FindObjectsByType<Building>(FindObjectsSortMode.None);
+            var all = Building.AllBuildings;
             Building best = null;
             float bestDist = float.MaxValue;
 
-            for (int i = 0; i < all.Length; i++)
+            for (int i = 0; i < all.Count; i++)
             {
                 Building b = all[i];
                 if (b == null || b.OwnerConnectionId != connectionId)
@@ -554,8 +586,10 @@ namespace RTSokak.Network
             if (string.IsNullOrEmpty(nickname))
                 return;
 
-            foreach (var unit in FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
             {
+                var unit = units[i];
                 if (unit == null)
                     continue;
                 // Уже с нашим ником — обновить index; с чужим ником — не трогать
@@ -574,8 +608,10 @@ namespace RTSokak.Network
                 }
             }
 
-            foreach (var building in FindObjectsByType<Building>(FindObjectsSortMode.None))
+            var buildings = Building.AllBuildings;
+            for (int i = 0; i < buildings.Count; i++)
             {
+                var building = buildings[i];
                 if (building == null)
                     continue;
                 if (building.IsOwnedByNickname(nickname))
@@ -759,8 +795,10 @@ namespace RTSokak.Network
         int CountOwnedUnitsAny()
         {
             int n = 0;
-            foreach (var u in FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
             {
+                var u = units[i];
                 if (u == null || !u.IsAlive) continue;
                 if ((!string.IsNullOrEmpty(nickname) && u.IsOwnedByNickname(nickname)) ||
                     u.OwnerConnectionId == connectionId)
@@ -852,7 +890,7 @@ namespace RTSokak.Network
         }
 
         /// <summary>Юнит-игрок синхронизирует позицию/yaw на сервер.</summary>
-        [Command(requiresAuthority = false)]
+        [Command(requiresAuthority = false, channel = Channels.Unreliable)]
         public void CmdUnitPlayerMove(uint unitNetId, Vector3 position, float yaw)
         {
             if (playerRole != PlayerRole.UnitPlaying || controlledUnitNetId != unitNetId)
@@ -976,9 +1014,10 @@ namespace RTSokak.Network
         [Server]
         public void ServerWipeOwnedBuildings()
         {
-            Building[] all = FindObjectsByType<Building>(FindObjectsSortMode.None);
-            for (int i = 0; i < all.Length; i++)
+            var all = Building.AllBuildings;
+            for (int i = all.Count - 1; i >= 0; i--)
             {
+                if (i >= all.Count) continue;
                 Building b = all[i];
                 if (b == null) continue;
                 if (!string.IsNullOrEmpty(nickname) && b.IsOwnedByNickname(nickname))
@@ -1006,8 +1045,8 @@ namespace RTSokak.Network
 
             if (playerRole == PlayerRole.MayorPlaying && !string.IsNullOrEmpty(nickname))
             {
-                RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
-                for (int i = 0; i < units.Length; i++)
+                var units = RTSUnit.AllUnits;
+                for (int i = 0; i < units.Count; i++)
                 {
                     RTSUnit u = units[i];
                     if (u == null || !u.IsPlayerControlled || !u.IsOwnedByNickname(nickname))
@@ -1150,8 +1189,11 @@ namespace RTSokak.Network
             int destroyed = 0;
             
             // Уничтожить юниты
-            foreach (var unit in FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
+            var units = RTSUnit.AllUnits;
+            for (int i = units.Count - 1; i >= 0; i--)
             {
+                if (i >= units.Count) continue;
+                var unit = units[i];
                 if (unit != null && unit.OwnerConnectionId == connectionId)
                 {
                     UnityEngine.Debug.Log($"[RTSPlayer] - Destroying unit: {unit.name}, ownerConnId={unit.OwnerConnectionId}");
@@ -1161,8 +1203,11 @@ namespace RTSokak.Network
             }
             
             // Уничтожить здания
-            foreach (var building in FindObjectsByType<Building>(FindObjectsSortMode.None))
+            var buildings = Building.AllBuildings;
+            for (int i = buildings.Count - 1; i >= 0; i--)
             {
+                if (i >= buildings.Count) continue;
+                var building = buildings[i];
                 if (building != null && building.OwnerConnectionId == connectionId)
                 {
                     UnityEngine.Debug.Log($"[RTSPlayer] - Destroying building: {building.name}, ownerConnId={building.OwnerConnectionId}");
@@ -1184,8 +1229,8 @@ namespace RTSokak.Network
 
             UnityEngine.Debug.Log($"[RTSPlayer] FindPlayerByNickname: searching for '{nick}'");
             
-            var allPlayers = FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None);
-            UnityEngine.Debug.Log($"[RTSPlayer] Found {allPlayers.Length} total players on server");
+            var allPlayers = AllPlayers;
+            UnityEngine.Debug.Log($"[RTSPlayer] Found {allPlayers.Count} total players on server");
             
             foreach (var p in allPlayers)
             {

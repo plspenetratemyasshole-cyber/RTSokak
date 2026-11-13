@@ -10,6 +10,32 @@ namespace RTSokak.Resources
     /// </summary>
     public class ResourceManager : NetworkBehaviour
     {
+        public static ResourceManager Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance == null)
+                Instance = this;
+        }
+
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            Instance = this;
+        }
+
+        public override void OnStartClient()
+        {
+            base.OnStartClient();
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
+        }
+
         [Header("Generation")]
         [SerializeField] private ResourceGenerationConfig config;
         
@@ -501,13 +527,16 @@ namespace RTSokak.Resources
         public List<Resource> GetResourcesInRadius(Vector3 worldPosition, float radius, ResourceType type, bool onlyAvailable = false)
         {
             List<Resource> result = new List<Resource>();
+            float sqrRadius = radius * radius;
+            var all = Resource.AllResources;
             
-            Collider[] colliders = Physics.OverlapSphere(worldPosition, radius);
-            
-            foreach (Collider col in colliders)
+            for (int i = 0; i < all.Count; i++)
             {
-                Resource resource = col.GetComponent<Resource>();
+                Resource resource = all[i];
                 if (resource == null || resource.IsHarvested || resource.Type != type)
+                    continue;
+
+                if ((resource.transform.position - worldPosition).sqrMagnitude > sqrRadius)
                     continue;
 
                 if (onlyAvailable && resource.IsClaimed)
@@ -530,22 +559,22 @@ namespace RTSokak.Resources
             NetworkIdentity allowClaimedBy = null)
         {
             Resource best = null;
-            float bestDist = float.MaxValue;
+            float bestDistSqr = radius * radius;
+            var all = Resource.AllResources;
 
-            Collider[] colliders = Physics.OverlapSphere(nearPoint, radius);
-            foreach (Collider col in colliders)
+            for (int i = 0; i < all.Count; i++)
             {
-                Resource resource = col.GetComponent<Resource>();
+                Resource resource = all[i];
                 if (resource == null || resource.IsHarvested || resource.Type != type)
                     continue;
 
                 if (resource.IsClaimed && !resource.IsClaimedBy(allowClaimedBy))
                     continue;
 
-                float dist = Vector3.Distance(nearPoint, resource.GetCenterPosition());
-                if (dist < bestDist)
+                float distSqr = (resource.GetCenterPosition() - nearPoint).sqrMagnitude;
+                if (distSqr < bestDistSqr)
                 {
-                    bestDist = dist;
+                    bestDistSqr = distSqr;
                     best = resource;
                 }
             }

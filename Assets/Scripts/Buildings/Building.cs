@@ -37,6 +37,7 @@ namespace RTSokak.Buildings
 
         [SyncVar(hook = nameof(OnProgressChanged))]
         private float buildProgress;
+        private float serverBuildProgress;
 
         [SyncVar(hook = nameof(OnIsCompleteChanged))]
         private bool isComplete;
@@ -265,21 +266,21 @@ namespace RTSokak.Buildings
             bool isEnemy = hasLocalPlayer && !IsOwnedByLocalPlayer();
 
             bool targetEnabled;
-            Outline.Mode targetMode = Outline.Mode.OutlineAll;
+            Outline.Mode targetMode = Outline.Mode.OutlineVisible;
             Color targetColor;
             float targetWidth;
 
             if (isEnemy)
             {
                 targetEnabled = true;
-                targetMode = Outline.Mode.OutlineAll;
+                targetMode = Outline.Mode.OutlineVisible;
                 targetColor = enemyOutlineColor;
                 targetWidth = outlineWidth * 1.15f;
             }
             else if (locallySelected)
             {
                 targetEnabled = true;
-                targetMode = Outline.Mode.OutlineAll;
+                targetMode = Outline.Mode.OutlineVisible;
                 targetColor = selectionColor;
                 targetWidth = outlineWidth;
             }
@@ -306,7 +307,14 @@ namespace RTSokak.Buildings
 
         private void Update()
         {
-            ApplyVerticalProgress();
+            if (!isComplete && finalPosition != Vector3.zero)
+            {
+                float targetY = finalPosition.y - buryDepth * (1f - Mathf.Clamp01(buildProgress));
+                float curY = transform.position.y;
+                float speed = Mathf.Max(0.5f, (buryDepth / Mathf.Max(0.5f, buildDuration)) * 1.5f);
+                float newY = Mathf.MoveTowards(curY, targetY, speed * Time.deltaTime);
+                transform.position = new Vector3(finalPosition.x, newY, finalPosition.z);
+            }
 
             // Держим бар стройки на финальной высоте (здание поднимается отдельно)
             if (constructionBar != null && !isComplete && finalPosition != Vector3.zero)
@@ -315,12 +323,15 @@ namespace RTSokak.Buildings
             if (isServer && !isComplete && builders.Count > 0 && buildDuration > 0.01f)
             {
                 float rate = builders.Count / buildDuration;
-                float newProgress = Mathf.Min(1f, buildProgress + rate * Time.deltaTime);
-                if (!Mathf.Approximately(newProgress, buildProgress))
+                serverBuildProgress = Mathf.Min(1f, serverBuildProgress + rate * Time.deltaTime);
+                if (serverBuildProgress >= 1f)
                 {
-                    buildProgress = newProgress;
-                    if (buildProgress >= 1f)
-                        CompleteConstruction();
+                    buildProgress = 1f;
+                    CompleteConstruction();
+                }
+                else if (serverBuildProgress - buildProgress >= 0.02f)
+                {
+                    buildProgress = serverBuildProgress;
                 }
             }
         }
@@ -401,6 +412,7 @@ namespace RTSokak.Buildings
             gridSizeX = Mathf.Max(1, size.x);
             gridSizeZ = Mathf.Max(1, size.y);
             buildProgress = 0f;
+            serverBuildProgress = 0f;
             isComplete = false;
             populationGranted = false;
 
@@ -435,6 +447,7 @@ namespace RTSokak.Buildings
             gridSizeX = Mathf.Max(1, size.x);
             gridSizeZ = Mathf.Max(1, size.y);
             buildProgress = Mathf.Clamp01(progress);
+            serverBuildProgress = buildProgress;
             isComplete = complete;
             populationGranted = popGranted;
 
@@ -479,6 +492,7 @@ namespace RTSokak.Buildings
             gridSizeX = Mathf.Max(1, size.x);
             gridSizeZ = Mathf.Max(1, size.y);
             buildProgress = 1f;
+            serverBuildProgress = 1f;
             isComplete = true;
             populationGranted = true;
 
@@ -540,6 +554,7 @@ namespace RTSokak.Buildings
                 return;
 
             buildProgress = 1f;
+            serverBuildProgress = 1f;
             isComplete = true;
             ApplyVerticalProgress();
 
@@ -643,6 +658,8 @@ namespace RTSokak.Buildings
             return pos;
         }
 
+        public bool IsSelected => locallySelected;
+
         public void Select()
         {
             locallySelected = true;
@@ -691,8 +708,10 @@ namespace RTSokak.Buildings
 
         static int ResolvePlayerIndex(int connectionId)
         {
-            foreach (var p in Object.FindObjectsByType<RTSokak.Network.RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSokak.Network.RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
+                var p = all[i];
                 if (p != null && p.ConnectionId == connectionId)
                     return p.PlayerIndex;
             }
@@ -701,8 +720,10 @@ namespace RTSokak.Buildings
 
         static string ResolvePlayerNickname(int connectionId)
         {
-            foreach (var p in Object.FindObjectsByType<RTSokak.Network.RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSokak.Network.RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
+                var p = all[i];
                 if (p != null && p.ConnectionId == connectionId)
                     return p.Nickname ?? "";
             }
@@ -781,9 +802,11 @@ namespace RTSokak.Buildings
 
         private static RTSokak.Network.RTSPlayer FindPlayer(int connId)
         {
-            foreach (var p in FindObjectsByType<RTSokak.Network.RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSokak.Network.RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
-                if (p.ConnectionId == connId)
+                var p = all[i];
+                if (p != null && p.ConnectionId == connId)
                     return p;
             }
 
@@ -794,8 +817,10 @@ namespace RTSokak.Buildings
         {
             if (string.IsNullOrEmpty(nick))
                 return null;
-            foreach (var p in FindObjectsByType<RTSokak.Network.RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSokak.Network.RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
+                var p = all[i];
                 if (p != null && !string.IsNullOrEmpty(p.Nickname) &&
                     string.Equals(p.Nickname, nick, System.StringComparison.OrdinalIgnoreCase))
                     return p;

@@ -150,6 +150,10 @@ namespace RTSokak.Network
         private float lastOwnershipCheck;
         private float nextChaseRetargetTime;
         private float nextNetPosSyncTime;
+        private float nextPlayerKnockbackAllowedTime;
+        protected float nextEnemySearchTime;
+        private float nextPathLineUpdateTime;
+        private float nextClientPredictionRetargetTime;
 
         /// <summary>После убийства ищем следующую цель с тем же владельцем.</summary>
         protected bool hasHuntOwner;
@@ -322,6 +326,7 @@ namespace RTSokak.Network
 
         protected virtual void Awake()
         {
+            syncInterval = 0.05f;
             unitNetIdentity = GetComponent<NetworkIdentity>();
             outline = GetComponent<Outline>() ?? gameObject.AddComponent<Outline>();
             // OutlineAll очень дорогой по fill-rate; Visible достаточно для RTS
@@ -529,7 +534,7 @@ namespace RTSokak.Network
             }
 
             transform.position = Vector3.SmoothDamp(
-                transform.position, target, ref clientSmoothVel, 0.08f, softCorrectSpeed * 1.5f);
+                transform.position, target, ref clientSmoothVel, 0.045f, softCorrectSpeed * 2.5f);
         }
 
         protected virtual void OnDestroy()
@@ -559,8 +564,10 @@ namespace RTSokak.Network
                 ownerPlayer = conn.identity.GetComponent<RTSPlayer>();
             if (ownerPlayer == null)
             {
-                foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+                var allPlayers = RTSPlayer.AllPlayers;
+                for (int i = 0; i < allPlayers.Count; i++)
                 {
+                    var p = allPlayers[i];
                     if (p != null && p.ConnectionId == conn.connectionId)
                     {
                         ownerPlayer = p;
@@ -619,6 +626,7 @@ namespace RTSokak.Network
             if (player == null) return;
             controllerPlayerNetId = player.netId;
             ServerStopCombat();
+            OnServerCancelTasksForMove();
             if (navAgent != null)
             {
                 if (navAgent.enabled)
@@ -626,10 +634,10 @@ namespace RTSokak.Network
                     navAgent.isStopped = true;
                     navAgent.ResetPath();
                 }
-                // Игрок сам двигает transform — агент только мешает Y
                 navAgent.enabled = false;
             }
             syncedDestination = Vector3.zero;
+            ServerApplyHotbarSlot(0);
         }
 
         [Server]
@@ -716,8 +724,10 @@ namespace RTSokak.Network
 
         static int FindOwnerPlayerIndex(int connectionId)
         {
-            foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var allPlayers = RTSPlayer.AllPlayers;
+            for (int i = 0; i < allPlayers.Count; i++)
             {
+                var p = allPlayers[i];
                 if (p != null && p.ConnectionId == connectionId)
                     return p.PlayerIndex;
             }
@@ -728,8 +738,10 @@ namespace RTSokak.Network
         {
             RTSUnit best = null;
             float bestDist = 2.5f;
-            foreach (var u in Object.FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
+            var allUnits = AllUnits;
+            for (int i = 0; i < allUnits.Count; i++)
             {
+                var u = allUnits[i];
                 if (u == null || !u.IsAlive) continue;
                 if (ownerPlayerIndex >= 0)
                 {
@@ -1013,6 +1025,10 @@ namespace RTSokak.Network
 
             if (!hasUnitTarget && !hasBuildingTarget)
             {
+                if (Time.time < nextEnemySearchTime)
+                    return;
+                nextEnemySearchTime = Time.time + 0.25f;
+
                 if (!ServerTryAcquireNextEnemy())
                 {
                     ServerStopCombat();
@@ -1050,8 +1066,6 @@ namespace RTSokak.Network
                 if (navAgent != null)
                     navAgent.isStopped = false;
 
-                syncedDestination = chaseDest;
-
                 bool needRetarget = Time.time >= nextChaseRetargetTime;
                 if (navAgent != null && navAgent.enabled)
                 {
@@ -1062,6 +1076,8 @@ namespace RTSokak.Network
                 if (needRetarget)
                 {
                     nextChaseRetargetTime = Time.time + chaseRetargetInterval;
+                    if ((chaseDest - syncedDestination).sqrMagnitude > 0.35f)
+                        syncedDestination = chaseDest;
                     TrySetAgentDestination(chaseDest);
                 }
                 return;
@@ -1346,11 +1362,12 @@ namespace RTSokak.Network
             }
 
             navAgent.isStopped = false;
-            if (!navAgent.pathPending)
+            if (!navAgent.pathPending && Time.time >= nextClientPredictionRetargetTime)
             {
                 if (!navAgent.hasPath ||
                     HorizontalDistance(navAgent.destination, moveTarget) > 0.4f)
                 {
+                    nextClientPredictionRetargetTime = Time.time + 0.15f;
                     TrySetAgentDestination(moveTarget);
                 }
             }
@@ -1387,10 +1404,7 @@ namespace RTSokak.Network
             {
                 Vector3 next = Vector3.SmoothDamp(
                     transform.position, target, ref clientSmoothVel, 0.1f, softCorrectSpeed);
-                if (navAgent.enabled && navAgent.isOnNavMesh)
-                    navAgent.Warp(next);
-                else
-                    transform.position = next;
+                transform.position = next;
             }
             else if (err > 0.45f)
             {
@@ -1439,13 +1453,13 @@ namespace RTSokak.Network
         [Server]
         protected Buildings.Building FindNearestEnemyBuilding(float range, bool requireHuntOwner)
         {
-            Buildings.Building[] buildings = FindObjectsByType<Buildings.Building>(FindObjectsSortMode.None);
+            var buildings = Buildings.Building.AllBuildings;
             Buildings.Building best = null;
             float bestDist = float.MaxValue;
             float rangeLimit = range < 0f ? float.MaxValue : range;
 
             Vector3 selfPos = transform.position;
-            for (int i = 0; i < buildings.Length; i++)
+            for (int i = 0; i < buildings.Count; i++)
             {
                 Buildings.Building b = buildings[i];
                 if (b == null || !b.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
@@ -1467,13 +1481,13 @@ namespace RTSokak.Network
         [Server]
         protected RTSUnit FindNearestEnemy(float range, bool requireHuntOwner)
         {
-            RTSUnit[] units = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
+            var units = AllUnits;
             RTSUnit best = null;
             float bestDist = float.MaxValue;
             float rangeLimit = range < 0f ? float.MaxValue : range;
 
             Vector3 selfPos = transform.position;
-            for (int i = 0; i < units.Length; i++)
+            for (int i = 0; i < units.Count; i++)
             {
                 RTSUnit u = units[i];
                 if (u == null || u == this || !u.IsAlive)
@@ -1715,18 +1729,26 @@ namespace RTSokak.Network
             if (flat.sqrMagnitude < 0.001f)
                 flat = transform.forward;
             flat.Normalize();
+
+            if (IsPlayerControlled)
+            {
+                if (Time.time < nextPlayerKnockbackAllowedTime)
+                    return;
+                nextPlayerKnockbackAllowedTime = Time.time + 0.65f;
+
+                // Для IsPlayerControlled НЕ добавляй рандомный разброс угла — отталкивай строго от атакующего
+                Vector3 playerImpulse = flat * (knockbackForce * 0.9f)
+                                      + Vector3.up * (knockbackUpForce * 0.85f);
+                RpcApplyPlayerKnockback(playerImpulse);
+                return;
+            }
+
             // Небольшой разброс — бой выглядит живее, не «по рельсам»
             flat = Quaternion.Euler(0f, Random.Range(-18f, 18f), 0f) * flat;
 
             float forceScale = 0.9f + Random.Range(0f, 0.35f);
             Vector3 impulse = flat * (knockbackForce * forceScale)
                               + Vector3.up * (knockbackUpForce * (0.85f + Random.Range(0f, 0.3f)));
-
-            if (IsPlayerControlled)
-            {
-                RpcApplyPlayerKnockback(impulse);
-                return;
-            }
 
             if (unitRigidbody == null)
                 unitRigidbody = GetComponent<Rigidbody>();
@@ -2070,6 +2092,13 @@ namespace RTSokak.Network
         /// <summary>Кулдаун действия юнита-игрока (для индикатора под прицелом).</summary>
         public virtual float GetPlayerActionCooldown() => attackCooldown;
 
+        public virtual void ApplyLocalPlayerHotbarVisual(int slotIndex)
+        {
+            playerHotbarSlot = slotIndex;
+            bool hasSword = (this is Warrior && slotIndex == 0) || (!(this is Archer) && slotIndex == 0);
+            SetSwordEquippedVisual(hasSword);
+        }
+
         [Server]
         public virtual void ServerApplyHotbarSlot(int slotIndex)
         {
@@ -2097,36 +2126,95 @@ namespace RTSokak.Network
             // Всегда анимируем взмах мечом при нажатии игроком
             RpcSwordSwing();
 
+            // Защита от спуфинга
+            if ((rayOrigin - transform.position).sqrMagnitude > 16f)
+                rayOrigin = transform.position + Vector3.up * 1.5f;
+
             Vector3 dir = rayDir.sqrMagnitude > 0.001f ? rayDir.normalized : transform.forward;
             float reach = attackRange + 1.2f;
 
-            RaycastHit hit;
-            bool didHit = Physics.SphereCast(rayOrigin, 0.45f, dir, out hit, reach, ~0, QueryTriggerInteraction.Ignore);
-            if (!didHit)
-                didHit = Physics.Raycast(rayOrigin, dir, out hit, reach + 0.5f, ~0, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.SphereCastAll(rayOrigin, 0.55f, dir, reach + 0.75f, ~0, QueryTriggerInteraction.Ignore);
+            if (hits != null && hits.Length > 1)
+                System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
-            if (didHit && hit.collider != null)
+            bool hitTarget = false;
+            if (hits != null)
             {
-                if (hit.collider.transform.IsChildOf(transform) || hit.collider.transform == transform)
-                    return;
-
-                RTSUnit enemy = hit.collider.GetComponentInParent<RTSUnit>();
-                if (enemy != null && enemy.IsAlive && !IsSameOwnerAs(enemy))
+                for (int i = 0; i < hits.Length; i++)
                 {
-                    Vector3 pushDir = enemy.transform.position - transform.position;
-                    pushDir.y = 0f;
-                    if (pushDir.sqrMagnitude < 0.001f) pushDir = transform.forward;
-                    enemy.ServerTakeDamage(attackDamage, pushDir.normalized, this);
-                    return;
+                    Collider col = hits[i].collider;
+                    if (col == null || col.transform.IsChildOf(transform) || col.transform == transform)
+                        continue;
+
+                    RTSUnit enemy = col.GetComponentInParent<RTSUnit>();
+                    if (enemy != null)
+                    {
+                        if (enemy.IsAlive && !IsSameOwnerAs(enemy))
+                        {
+                            Vector3 pushDir = enemy.transform.position - transform.position;
+                            pushDir.y = 0f;
+                            if (pushDir.sqrMagnitude < 0.001f) pushDir = transform.forward;
+                            enemy.ServerTakeDamage(attackDamage, pushDir.normalized, this);
+                            hitTarget = true;
+                            return;
+                        }
+                        continue;
+                    }
+
+                    Buildings.Building building = col.GetComponentInParent<Buildings.Building>();
+                    if (building != null)
+                    {
+                        if (building.CurrentHealth > 0 &&
+                            building.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
+                        {
+                            building.TakeDamage(attackDamage, unitNetIdentity, out _);
+                            if (IsPlayerControlled)
+                                RpcShowHitmarker();
+                            hitTarget = true;
+                            return;
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            // Дополнительный поиск вплотную или сбоку среди AllUnits
+            if (!hitTarget)
+            {
+                RTSUnit bestEnemy = null;
+                float bestDist = float.MaxValue;
+                float maxDist = attackRange + 1.0f;
+                var allUnits = AllUnits;
+
+                for (int i = 0; i < allUnits.Count; i++)
+                {
+                    RTSUnit u = allUnits[i];
+                    if (u == null || u == this || !u.IsAlive || IsSameOwnerAs(u))
+                        continue;
+
+                    Vector3 toEnemy = u.transform.position - transform.position;
+                    toEnemy.y = 0f;
+                    float d = toEnemy.magnitude;
+                    if (d > maxDist || d >= bestDist)
+                        continue;
+
+                    if (d > 0.01f)
+                    {
+                        float angle = Vector3.Angle(dir, toEnemy.normalized);
+                        if (angle >= 65f)
+                            continue;
+                    }
+
+                    bestDist = d;
+                    bestEnemy = u;
                 }
 
-                Buildings.Building building = hit.collider.GetComponentInParent<Buildings.Building>();
-                if (building != null && building.CurrentHealth > 0 &&
-                    building.CanBeAttackedBy(ownerNickname, ownerPlayerIndex, ownerConnectionId))
+                if (bestEnemy != null)
                 {
-                    building.TakeDamage(attackDamage, unitNetIdentity, out _);
-                    if (IsPlayerControlled)
-                        RpcShowHitmarker();
+                    Vector3 pushDir = bestEnemy.transform.position - transform.position;
+                    pushDir.y = 0f;
+                    if (pushDir.sqrMagnitude < 0.001f) pushDir = transform.forward;
+                    bestEnemy.ServerTakeDamage(attackDamage, pushDir.normalized, this);
                 }
             }
         }
@@ -2164,7 +2252,7 @@ namespace RTSokak.Network
             }
 
             bool targetEnabled;
-            Outline.Mode targetMode = Outline.Mode.OutlineAll;
+            Outline.Mode targetMode = Outline.Mode.OutlineVisible;
             Color targetColor;
             float targetWidth;
 
@@ -2312,21 +2400,24 @@ namespace RTSokak.Network
                 return false;
 
             NavMeshPath path = navAgent.path;
-            if (!navAgent.hasPath || path == null || path.corners == null || path.corners.Length < 2)
+            Vector3[] corners = path != null ? path.corners : null;
+            if (!navAgent.hasPath || corners == null || corners.Length < 2)
             {
                 // Если агент ещё не построил путь — попробуем CalculatePath
                 path = new NavMeshPath();
                 Vector3 from = transform.position;
-                if (!NavMesh.CalculatePath(from, destination, NavMesh.AllAreas, path) ||
-                    path.corners == null || path.corners.Length < 2)
+                if (!NavMesh.CalculatePath(from, destination, NavMesh.AllAreas, path))
+                    return false;
+                corners = path.corners;
+                if (corners == null || corners.Length < 2)
                     return false;
             }
 
             pathLine.enabled = true;
-            pathLine.positionCount = path.corners.Length;
-            for (int i = 0; i < path.corners.Length; i++)
+            pathLine.positionCount = corners.Length;
+            for (int i = 0; i < corners.Length; i++)
             {
-                Vector3 point = path.corners[i];
+                Vector3 point = corners[i];
                 if (i == 0)
                     point = transform.position;
                 point.y = lineHeight;
@@ -2343,6 +2434,14 @@ namespace RTSokak.Network
         {
             if (pathLine == null || !IsOwned || !isSelected)
                 return;
+
+            if (pathLine.enabled && pathLine.positionCount > 0)
+                pathLine.SetPosition(0, new Vector3(transform.position.x, lineHeight, transform.position.z));
+
+            if (Time.time < nextPathLineUpdateTime)
+                return;
+
+            nextPathLineUpdateTime = Time.time + 0.1f;
 
             if (syncedAttackTargetNetId != 0 &&
                 NetworkClient.spawned.TryGetValue(syncedAttackTargetNetId, out NetworkIdentity id) &&
@@ -2422,9 +2521,11 @@ namespace RTSokak.Network
 
         protected RTSPlayer FindOwnerPlayer()
         {
-            foreach (var p in FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var all = RTSPlayer.AllPlayers;
+            for (int i = 0; i < all.Count; i++)
             {
-                if (p.ConnectionId == ownerConnectionId)
+                var p = all[i];
+                if (p != null && p.ConnectionId == ownerConnectionId)
                     return p;
             }
             return null;

@@ -191,10 +191,11 @@ namespace RTSokak.UI
             if (!additive)
                 ClearUnitsSelectionOnly();
 
-            RTSUnit[] all = FindObjectsByType<RTSUnit>(FindObjectsSortMode.None);
+            var all = RTSUnit.AllUnits;
             bool any = false;
-            foreach (RTSUnit unit in all)
+            for (int i = 0; i < all.Count; i++)
             {
+                RTSUnit unit = all[i];
                 if (unit == null || !unit.IsOwned || !unit.IsAlive)
                     continue;
 

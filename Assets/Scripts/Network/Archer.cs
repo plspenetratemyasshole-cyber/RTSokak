@@ -146,6 +146,10 @@ namespace RTSokak.Network
 
             if (!hasUnitTarget && !hasBuildingTarget)
             {
+                if (Time.time < nextEnemySearchTime)
+                    return;
+                nextEnemySearchTime = Time.time + 0.25f;
+
                 if (!ServerTryAcquireNextEnemyArcher())
                 {
                     ServerStopArcherCombat();
@@ -181,8 +185,6 @@ namespace RTSokak.Network
                 if (navAgent != null)
                     navAgent.isStopped = false;
 
-                syncedDestination = chaseDest;
-
                 bool needRetarget = Time.time >= archerNextChaseRetargetTime;
                 if (navAgent != null && navAgent.enabled)
                 {
@@ -193,6 +195,8 @@ namespace RTSokak.Network
                 if (needRetarget)
                 {
                     archerNextChaseRetargetTime = Time.time + chaseRetargetInterval;
+                    if ((chaseDest - syncedDestination).sqrMagnitude > 0.35f)
+                        syncedDestination = chaseDest;
                     TrySetAgentDestination(chaseDest);
                 }
                 return;
@@ -302,6 +306,12 @@ namespace RTSokak.Network
             NetworkServer.Spawn(arrowObj);
 
             RpcShootVisual(targetPos);
+        }
+
+        public override void ApplyLocalPlayerHotbarVisual(int slotIndex)
+        {
+            playerHotbarSlot = slotIndex;
+            SetCrossbowVisual(slotIndex == 0);
         }
 
         [Server]

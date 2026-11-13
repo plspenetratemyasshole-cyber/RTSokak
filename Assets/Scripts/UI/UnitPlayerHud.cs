@@ -17,20 +17,35 @@ namespace RTSokak.UI
 
         public static UnitPlayerHud Ensure()
         {
-            if (Instance != null)
+            if (Instance == null)
             {
-                if (!Instance.gameObject.activeSelf)
-                    Instance.gameObject.SetActive(true);
-                return Instance;
+                Instance = Object.FindFirstObjectByType<UnitPlayerHud>(FindObjectsInactive.Include);
             }
 
-            var existing = Object.FindFirstObjectByType<UnitPlayerHud>(FindObjectsInactive.Include);
-            if (existing != null)
+            if (Instance != null)
             {
-                if (!existing.gameObject.activeSelf)
-                    existing.gameObject.SetActive(true);
-                Instance = existing;
-                return existing;
+                if (Instance.transform.parent != null)
+                {
+                    Canvas parentCanvas = Instance.transform.parent.GetComponentInParent<Canvas>(true);
+                    if (parentCanvas == null || !parentCanvas.gameObject.activeInHierarchy || !parentCanvas.enabled || parentCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                    {
+                        Instance.transform.SetParent(null, false);
+                    }
+                }
+
+                Transform t = Instance.transform;
+                while (t != null)
+                {
+                    if (!t.gameObject.activeSelf)
+                        t.gameObject.SetActive(true);
+                    t = t.parent;
+                }
+
+                if (!Instance.enabled)
+                    Instance.enabled = true;
+
+                Instance.EnsureBaseHudUI();
+                return Instance;
             }
 
             var go = new GameObject("UnitPlayerHudCanvas");
@@ -68,6 +83,7 @@ namespace RTSokak.UI
         private int lastWood = -1;
         private int lastOre = -1;
         private int lastFood = -1;
+        private int lastTickFrame = -1;
         private Sprite whiteSprite;
 
         [Header("Cooldown Bar")]
@@ -222,6 +238,17 @@ namespace RTSokak.UI
             return whiteSprite;
         }
 
+        private static void AddTextOutline(GameObject go)
+        {
+            if (go == null) return;
+            var outline = go.GetComponent<UnityEngine.UI.Outline>();
+            if (outline == null)
+                outline = go.AddComponent<UnityEngine.UI.Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            outline.effectDistance = new Vector2(1.2f, -1.2f);
+            outline.useGraphicAlpha = true;
+        }
+
         public void EnsureHealthBarUI()
         {
             if (healthBarRoot != null || hudRoot == null)
@@ -299,8 +326,7 @@ namespace RTSokak.UI
             healthText.fontStyle = FontStyles.Bold;
             healthText.alignment = TextAlignmentOptions.Center;
             healthText.color = Color.white;
-            healthText.outlineWidth = 0.2f;
-            healthText.outlineColor = Color.black;
+            AddTextOutline(textGo);
             healthText.raycastTarget = false;
             healthText.text = "HP: 100 / 100";
         }
@@ -315,14 +341,15 @@ namespace RTSokak.UI
             {
                 canvas = gameObject.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                canvas.sortingOrder = 90;
+                canvas.sortingOrder = 95;
             }
             else
             {
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                if (canvas.sortingOrder < 90)
-                    canvas.sortingOrder = 90;
+                if (canvas.sortingOrder < 95)
+                    canvas.sortingOrder = 95;
             }
+            canvas.enabled = true;
 
             CanvasScaler scaler = GetComponentInParent<CanvasScaler>();
             if (scaler == null)
@@ -340,6 +367,14 @@ namespace RTSokak.UI
             if (raycaster == null)
             {
                 gameObject.AddComponent<GraphicRaycaster>();
+            }
+
+            // CanvasGroup check on gameObject, hudRoot and parents
+            CanvasGroup[] cgs = GetComponentsInParent<CanvasGroup>(true);
+            for (int i = 0; i < cgs.Length; i++)
+            {
+                if (cgs[i] != null && cgs[i].alpha < 0.99f)
+                    cgs[i].alpha = 1f;
             }
 
             // IMPORTANT: hudRoot must never be this.gameObject!
@@ -361,6 +396,13 @@ namespace RTSokak.UI
                     rt.offsetMax = Vector2.zero;
                     hudRoot = newRoot;
                 }
+            }
+
+            if (hudRoot != null)
+            {
+                CanvasGroup rootCg = hudRoot.GetComponent<CanvasGroup>();
+                if (rootCg != null && rootCg.alpha < 0.99f)
+                    rootCg.alpha = 1f;
             }
 
             // Crosshair check
@@ -389,6 +431,14 @@ namespace RTSokak.UI
                     crosshair = chGo;
                 }
             }
+            if (crosshair != null)
+            {
+                if (crosshair.transform.parent != hudRoot.transform)
+                    crosshair.transform.SetParent(hudRoot.transform, false);
+                Image img = crosshair.GetComponent<Image>();
+                if (img != null && img.sprite == null)
+                    img.sprite = GetWhiteSprite();
+            }
 
             // HotbarRoot check
             if (hotbarRoot == null)
@@ -410,11 +460,15 @@ namespace RTSokak.UI
                     hotbarRoot.sizeDelta = new Vector2(300f, 64f);
                 }
             }
+            if (hotbarRoot != null && hotbarRoot.parent != hudRoot.transform)
+            {
+                hotbarRoot.SetParent(hudRoot.transform, false);
+            }
 
             // ResourcesText check
             if (resourcesText == null)
             {
-                Transform existingRes = hudRoot.transform.Find("ResourcesText");
+                Transform existingRes = hudRoot.transform.Find("ResourcesText") ?? hudRoot.transform.Find("Resources");
                 if (existingRes != null)
                 {
                     resourcesText = existingRes.GetComponent<TextMeshProUGUI>();
@@ -435,11 +489,19 @@ namespace RTSokak.UI
                     resourcesText.fontStyle = FontStyles.Bold;
                     resourcesText.alignment = TextAlignmentOptions.Center;
                     resourcesText.color = Color.white;
-                    resourcesText.outlineWidth = 0.2f;
-                    resourcesText.outlineColor = Color.black;
+                    AddTextOutline(resGo);
                     resourcesText.raycastTarget = false;
                     resourcesText.text = "Wood 0   Ore 0   Food 0";
                 }
+            }
+            if (resourcesText != null && resourcesText.transform.parent != hudRoot.transform)
+            {
+                resourcesText.transform.SetParent(hudRoot.transform, false);
+            }
+
+            if (healthBarRoot != null && healthBarRoot.parent != hudRoot.transform)
+            {
+                healthBarRoot.SetParent(hudRoot.transform, false);
             }
         }
 
@@ -451,12 +513,19 @@ namespace RTSokak.UI
                 return;
             }
             Instance = this;
+
             EnsureBaseHudUI();
+            if (hudRoot != null && !hudRoot.activeSelf)
+                hudRoot.SetActive(true);
+
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
             EnsureHitmarkerUI();
             EnsureGardenPromptUI();
-            if (hudRoot != null)
+
+            bool shouldBeVisibleNow = RTSPlayer.localPlayer != null &&
+                                      RTSPlayer.localPlayer.Role == PlayerRole.UnitPlaying;
+            if (hudRoot != null && !shouldBeVisibleNow)
                 hudRoot.SetActive(false);
         }
 
@@ -468,6 +537,16 @@ namespace RTSokak.UI
 
         private void Update()
         {
+            TickHud(null);
+        }
+
+        public void TickFromController(RTSUnit unit) => TickHud(unit);
+
+        public void TickHud(RTSUnit explicitUnit = null)
+        {
+            if (lastTickFrame == Time.frameCount)
+                return;
+
             if (RTSPlayer.localPlayer == null ||
                 RTSPlayer.localPlayer.Role != PlayerRole.UnitPlaying)
             {
@@ -475,17 +554,21 @@ namespace RTSokak.UI
                 return;
             }
 
-            RTSUnit unit = ResolveControlledUnit();
+            RTSUnit unit = explicitUnit != null ? explicitUnit : ResolveControlledUnit();
             if (unit == null || !unit.IsAlive)
             {
                 Hide();
                 return;
             }
 
-            if (boundUnit != unit)
+            lastTickFrame = Time.frameCount;
+
+            // Сначала активируем hudRoot через Show(), чтобы RebuildHotbar создавал TMP-тексты в активной иерархии!
+            Show();
+
+            if (boundUnit != unit || slotImages.Count == 0)
                 BindUnit(unit);
 
-            Show();
             UpdateCooldownBar();
             UpdateHitmarker();
             UpdateGardenPrompt();
@@ -496,8 +579,18 @@ namespace RTSokak.UI
 
         private RTSUnit ResolveControlledUnit()
         {
+            if (UnitPlayerController.Instance != null &&
+                UnitPlayerController.Instance.IsActive &&
+                UnitPlayerController.Instance.ControlledUnit != null)
+            {
+                return UnitPlayerController.Instance.ControlledUnit;
+            }
+
+            if (RTSPlayer.localPlayer == null)
+                return null;
+
             uint id = RTSPlayer.localPlayer.ControlledUnitNetId;
-            if (id == 0 || !NetworkClient.spawned.TryGetValue(id, out NetworkIdentity ni))
+            if (id == 0 || !NetworkClient.spawned.TryGetValue(id, out NetworkIdentity ni) || ni == null)
                 return null;
             return ni.GetComponent<RTSUnit>();
         }
@@ -527,7 +620,7 @@ namespace RTSokak.UI
 
         private void HandleHotbarInput()
         {
-            if (currentTools.Length == 0)
+            if (currentTools == null || currentTools.Length == 0)
                 return;
 
             // Digits 1..9
@@ -541,6 +634,9 @@ namespace RTSokak.UI
             }
 
             float scroll = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(scroll) < 0.01f)
+                scroll = Input.GetAxisRaw("Mouse ScrollWheel");
+
             if (Mathf.Abs(scroll) < 0.01f)
                 return;
 
@@ -569,6 +665,8 @@ namespace RTSokak.UI
             selectedSlot = index;
             ResetCooldown();
             ApplySlotColors();
+            if (boundUnit != null)
+                boundUnit.ApplyLocalPlayerHotbarVisual(selectedSlot);
             if (RTSPlayer.localPlayer != null)
                 RTSPlayer.localPlayer.CmdUnitPlayerSelectHotbar(selectedSlot);
         }
@@ -596,6 +694,7 @@ namespace RTSokak.UI
                 rt.anchoredPosition = new Vector2(startX + i * (slotSize + slotGap), 0f);
 
                 var img = slot.GetComponent<Image>();
+                img.sprite = GetWhiteSprite();
                 img.color = slotNormal;
                 slotImages.Add(img);
 
@@ -796,8 +895,7 @@ namespace RTSokak.UI
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = color;
-            tmp.outlineWidth = 0.25f;
-            tmp.outlineColor = Color.black;
+            AddTextOutline(popGo);
             tmp.raycastTarget = false;
 
             float duration = 0.9f;
@@ -899,8 +997,7 @@ namespace RTSokak.UI
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = new Color(0.45f, 1f, 0.55f, 1f);
-            tmp.outlineWidth = 0.2f;
-            tmp.outlineColor = Color.black;
+            AddTextOutline(textGo);
             tmp.raycastTarget = false;
 
             float duration = 1.5f;
@@ -1068,8 +1165,7 @@ namespace RTSokak.UI
             gardenPromptText.fontStyle = FontStyles.Bold;
             gardenPromptText.alignment = TextAlignmentOptions.Center;
             gardenPromptText.color = Color.white;
-            gardenPromptText.outlineWidth = 0.2f;
-            gardenPromptText.outlineColor = Color.black;
+            AddTextOutline(textGo);
             gardenPromptText.raycastTarget = false;
 
             promptGo.SetActive(false);
@@ -1180,14 +1276,16 @@ namespace RTSokak.UI
         private void Show()
         {
             EnsureBaseHudUI();
+            if (hudRoot != null && !hudRoot.activeSelf)
+                hudRoot.SetActive(true);
+
             EnsureHealthBarUI();
             EnsureCooldownBarUI();
             EnsureHitmarkerUI();
             EnsureGardenPromptUI();
-            if (hudRoot != null && !hudRoot.activeSelf)
-                hudRoot.SetActive(true);
-            if (crosshair != null)
-                crosshair.SetActive(Cursor.lockState == CursorLockMode.Locked);
+
+            if (crosshair != null && !crosshair.activeSelf)
+                crosshair.SetActive(true);
         }
 
         private void Hide()

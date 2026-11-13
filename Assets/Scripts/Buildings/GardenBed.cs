@@ -45,6 +45,8 @@ namespace RTSokak.Buildings
         private readonly List<int> wheatStageIndices = new List<int>();
         private readonly List<float> wheatSpawnTimes = new List<float>();
         private readonly List<Vector3> wheatBaseScales = new List<Vector3>();
+        private readonly List<Renderer[]> wheatRenderers = new List<Renderer[]>();
+        private readonly List<Color> wheatLastColors = new List<Color>();
         private MaterialPropertyBlock mpb;
 
         [SyncVar]
@@ -349,6 +351,8 @@ namespace RTSokak.Buildings
                 wheatStageIndices.Add(-1);
                 wheatSpawnTimes.Add(0f);
                 wheatBaseScales.Add(Vector3.one);
+                wheatRenderers.Add(null);
+                wheatLastColors.Add(Color.clear);
             }
             while (wheatVisuals.Count > n)
             {
@@ -359,6 +363,8 @@ namespace RTSokak.Buildings
                 wheatStageIndices.RemoveAt(last);
                 wheatSpawnTimes.RemoveAt(last);
                 wheatBaseScales.RemoveAt(last);
+                wheatRenderers.RemoveAt(last);
+                wheatLastColors.RemoveAt(last);
             }
         }
 
@@ -393,7 +399,11 @@ namespace RTSokak.Buildings
             go.transform.rotation = Quaternion.identity;
 
             if (index >= 0 && index < wheatBaseScales.Count)
+            {
                 wheatBaseScales[index] = baseScale;
+                wheatRenderers[index] = go.GetComponentsInChildren<Renderer>(true);
+                wheatLastColors[index] = Color.clear;
+            }
 
             return go;
         }
@@ -402,6 +412,13 @@ namespace RTSokak.Buildings
         {
             if (plantPoints == null)
                 return;
+
+            if (building == null)
+                building = GetComponent<Building>();
+            bool isBuildingComplete = building != null && building.IsComplete;
+
+            var cam = RTSokak.UI.UnitHealthBar.ResolveBillboardCamera(null);
+            bool farFromCam = cam != null && (cam.transform.position - transform.position).sqrMagnitude > 60f * 60f;
 
             double now = NetworkTime.time;
             for (int i = 0; i < wheatVisuals.Count && i < plotStates.Count; i++)
@@ -419,6 +436,8 @@ namespace RTSokak.Buildings
                         wheatVisuals[i] = null;
                     }
                     wheatStageIndices[i] = -1;
+                    if (i < wheatRenderers.Count) wheatRenderers[i] = null;
+                    if (i < wheatLastColors.Count) wheatLastColors[i] = Color.clear;
                     continue;
                 }
 
@@ -452,13 +471,17 @@ namespace RTSokak.Buildings
                 if (wheat == null)
                     continue;
 
-                // Установить позицию на точке посадки
-                wheat.transform.position = point.position;
+                // Установить позицию на точке посадки (не обновляем каждый кадр если здание завершено)
+                if (!isBuildingComplete || (wheat.transform.position - point.position).sqrMagnitude > 0.001f)
+                    wheat.transform.position = point.position;
 
-                // Покачивание колосьев на ветру (амплитуда растёт со зрелостью)
-                float windX = Mathf.Sin(Time.time * 2.2f + i * 1.3f) * 4.5f * (0.3f + 0.7f * t);
-                float windZ = Mathf.Cos(Time.time * 1.8f + i * 0.9f) * 3.5f * (0.3f + 0.7f * t);
-                wheat.transform.rotation = Quaternion.Euler(windX, (i * 57f) % 360f, windZ);
+                // Покачивание колосьев на ветру (пропускаем если далеко от камеры > 60м)
+                if (!farFromCam)
+                {
+                    float windX = Mathf.Sin(Time.time * 2.2f + i * 1.3f) * 4.5f * (0.3f + 0.7f * t);
+                    float windZ = Mathf.Cos(Time.time * 1.8f + i * 0.9f) * 3.5f * (0.3f + 0.7f * t);
+                    wheat.transform.rotation = Quaternion.Euler(windX, (i * 57f) % 360f, windZ);
+                }
 
                 // Плавный pop-in и мягкий рост масштаба
                 Vector3 baseScale = i < wheatBaseScales.Count ? wheatBaseScales[i] : Vector3.one;
@@ -469,22 +492,36 @@ namespace RTSokak.Buildings
 
                 // Изменить цвет от молодого к спелому
                 Color c = Color.Lerp(youngColor, ripeColor, t);
-                ApplyColor(wheat, c);
+                ApplyColor(i, c);
             }
         }
 
-        private void ApplyColor(GameObject go, Color color)
+        private void ApplyColor(int index, Color color)
         {
+            if (index < 0 || index >= wheatRenderers.Count)
+                return;
+
+            Color last = wheatLastColors[index];
+            if (Mathf.Abs(color.r - last.r) + Mathf.Abs(color.g - last.g) + Mathf.Abs(color.b - last.b) < 0.01f)
+                return;
+
+            wheatLastColors[index] = color;
+            Renderer[] renderers = wheatRenderers[index];
+            if (renderers == null)
+                return;
+
             if (mpb == null)
                 mpb = new MaterialPropertyBlock();
 
-            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            for (int r = 0; r < renderers.Length; r++)
             {
-                r.GetPropertyBlock(mpb);
+                var rend = renderers[r];
+                if (rend == null) continue;
+                rend.GetPropertyBlock(mpb);
                 mpb.SetColor("_UnlitColor", color);
                 mpb.SetColor("_BaseColor", color);
                 mpb.SetColor("_Color", color);
-                r.SetPropertyBlock(mpb);
+                rend.SetPropertyBlock(mpb);
             }
         }
 
@@ -499,6 +536,8 @@ namespace RTSokak.Buildings
             wheatStageIndices.Clear();
             wheatSpawnTimes.Clear();
             wheatBaseScales.Clear();
+            wheatRenderers.Clear();
+            wheatLastColors.Clear();
         }
 
         /// <summary>

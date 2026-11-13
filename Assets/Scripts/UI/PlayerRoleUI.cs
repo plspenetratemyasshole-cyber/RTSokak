@@ -93,6 +93,17 @@ namespace RTSokak.UI
             if (boundPlayer.Role != lastRole)
                 ApplyRole(boundPlayer.Role);
 
+            if (boundPlayer.Role == PlayerRole.UnitPlaying && boundPlayer.ControlledUnitNetId != 0)
+            {
+                if (UnitPlayerController.Instance == null ||
+                    !UnitPlayerController.Instance.IsActive ||
+                    UnitPlayerController.Instance.ControlledUnit == null ||
+                    UnitPlayerController.Instance.ControlledUnit.netId != boundPlayer.ControlledUnitNetId)
+                {
+                    SyncUnitPlayerController(boundPlayer.ControlledUnitNetId);
+                }
+            }
+
             // Mayor placing: Enter confirms camera look-at / position as settlement
             if (boundPlayer.Role == PlayerRole.MayorPlacing && Input.GetKeyDown(KeyCode.Return))
                 ConfirmSettlementFromCamera();
@@ -272,18 +283,23 @@ namespace RTSokak.UI
 
         private static void RefreshWorldOutlines()
         {
-            foreach (var u in Object.FindObjectsByType<RTSUnit>(FindObjectsSortMode.None))
-                u?.ForceUpdateOutline();
-            foreach (var b in Object.FindObjectsByType<RTSokak.Buildings.Building>(FindObjectsSortMode.None))
-                b?.ForceUpdateOutline();
+            var units = RTSUnit.AllUnits;
+            for (int i = 0; i < units.Count; i++)
+                units[i]?.ForceUpdateOutline();
+
+            var buildings = RTSokak.Buildings.Building.AllBuildings;
+            for (int i = 0; i < buildings.Count; i++)
+                buildings[i]?.ForceUpdateOutline();
         }
 
         /// <summary>Список игроков в UnitWaiting (для convert UI мэра).</summary>
         public static List<RTSPlayer> GetWaitingUnitPlayers()
         {
             var list = new List<RTSPlayer>();
-            foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var players = RTSPlayer.AllPlayers;
+            for (int i = 0; i < players.Count; i++)
             {
+                var p = players[i];
                 if (p != null && p.Role == PlayerRole.UnitWaiting)
                     list.Add(p);
             }

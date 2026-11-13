@@ -383,7 +383,7 @@ namespace RTSokak.Buildings
             size.x = Mathf.Max(1, size.x);
             size.y = Mathf.Max(1, size.y);
 
-            ResourceManager resources = Object.FindFirstObjectByType<ResourceManager>();
+            ResourceManager resources = ResourceManager.Instance;
 
             for (int x = 0; x < size.x; x++)
             {

@@ -458,8 +458,10 @@ namespace RTSokak.UI
             if (string.IsNullOrEmpty(faction))
                 return null;
 
-            foreach (var p in Object.FindObjectsByType<RTSPlayer>(FindObjectsSortMode.None))
+            var allPlayers = RTSPlayer.AllPlayers;
+            for (int i = 0; i < allPlayers.Count; i++)
             {
+                var p = allPlayers[i];
                 if (p == null || p.Role != PlayerRole.MayorPlaying)
                     continue;
                 if (string.Equals(p.Nickname, faction, System.StringComparison.OrdinalIgnoreCase))
@@ -476,7 +478,7 @@ namespace RTSokak.UI
             if (!autoWorldBounds)
                 return;
 
-            var rm = Object.FindFirstObjectByType<ResourceManager>();
+            var rm = ResourceManager.Instance;
             if (rm == null)
                 return;
 
