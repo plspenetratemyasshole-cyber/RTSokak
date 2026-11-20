@@ -190,6 +190,7 @@ namespace RTSokak.Network
         private Vector3 knockbackSettleFrom;
         private Vector3 knockbackSettleTo;
         private Vector3 clientSmoothVel;
+        private bool wasClientKnockedBack;
         private RigidbodyConstraints idleRbConstraints;
         private RigidbodyConstraints knockbackRbConstraints;
 
@@ -1320,10 +1321,15 @@ namespace RTSokak.Network
                         0.06f,
                         follow);
                 }
+                wasClientKnockedBack = true;
                 return;
             }
 
-            clientSmoothVel = Vector3.zero;
+            if (wasClientKnockedBack)
+            {
+                wasClientKnockedBack = false;
+                clientSmoothVel = Vector3.zero;
+            }
 
             // Выход из knockback или неактивный NavMeshAgent
             if (!navAgent.enabled || !navAgent.isOnNavMesh)

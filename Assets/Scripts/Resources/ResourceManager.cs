@@ -55,7 +55,8 @@ namespace RTSokak.Resources
 
         [Header("Limits")]
         [Tooltip("Hard cap on total resources to protect network and NavMesh")]
-        [SerializeField] private int maxTotalResources = 3500;
+        [SerializeField] private int maxWoodResources = 2200;
+        [SerializeField] private int maxOreResources = 1300;
 
         [SyncVar]
         private int worldSeed;
@@ -165,11 +166,11 @@ namespace RTSokak.Resources
 
             // Генерируем леса
             GenerateDeposits(ResourceType.Wood, config.forestCount, 
-                            config.minForestSize, config.maxForestSize, config.forestDensity);
+                            config.minForestSize, config.maxForestSize, config.forestDensity, maxWoodResources);
 
             // Генерируем месторождения руды
             GenerateDeposits(ResourceType.Ore, config.oreDepositCount,
-                            config.minOreSize, config.maxOreSize, config.oreDensity);
+                            config.minOreSize, config.maxOreSize, config.oreDensity, maxOreResources);
 
             UnityEngine.Debug.Log($"Generated {spawnedResources.Count} resources total");
         }
@@ -178,9 +179,10 @@ namespace RTSokak.Resources
         /// Генерирует залежи определённого типа
         /// </summary>
         [Server]
-        private void GenerateDeposits(ResourceType type, int count, int minSize, int maxSize, float density)
+        private void GenerateDeposits(ResourceType type, int count, int minSize, int maxSize, float density, int maxForType)
         {
             List<Vector2Int> depositCenters = new List<Vector2Int>();
+            int spawnedForType = 0;
             
             // Генерируем центры залежей
             for (int i = 0; i < count; i++)
@@ -204,18 +206,19 @@ namespace RTSokak.Resources
                 // Спавним ресурсы
                 foreach (Vector2Int pos in positions)
                 {
-                    if (spawnedResources.Count >= maxTotalResources)
+                    if (spawnedForType >= maxForType)
                         break;
 
                     if (!spawnedResources.ContainsKey(pos))
                     {
-                        SpawnResource(type, pos);
+                        if (SpawnResource(type, pos))
+                            spawnedForType++;
                     }
                 }
 
-                if (spawnedResources.Count >= maxTotalResources)
+                if (spawnedForType >= maxForType)
                 {
-                    UnityEngine.Debug.LogWarning($"[ResourceManager] Reached maxTotalResources cap ({maxTotalResources}). Halting generation.");
+                    UnityEngine.Debug.LogWarning($"[ResourceManager] Reached cap ({maxForType}) for {type}. Halting {type} generation.");
                     break;
                 }
             }
@@ -267,11 +270,8 @@ namespace RTSokak.Resources
         /// КРИТИЧНО: Проверяет что в этой клетке нет другого типа ресурса
         /// </summary>
         [Server]
-        private void SpawnResource(ResourceType type, Vector2Int gridPos)
+        private bool SpawnResource(ResourceType type, Vector2Int gridPos)
         {
-            if (spawnedResources.Count >= maxTotalResources)
-                return;
-
             // ПРОВЕРКА: Есть ли уже ресурс в этой клетке?
             if (spawnedResources.TryGetValue(gridPos, out Resource existingResource))
             {
@@ -279,7 +279,7 @@ namespace RTSokak.Resources
                 if (existingResource != null && existingResource.Type != type)
                 {
                     // Ресурсы разных типов не могут быть в одной клетке
-                    return;
+                    return false;
                 }
             }
             
@@ -289,7 +289,7 @@ namespace RTSokak.Resources
             if (prefab == null)
             {
                 UnityEngine.Debug.LogWarning($"Prefab for {type} is not assigned!");
-                return;
+                return false;
             }
 
             // Конвертируем grid координаты в world
@@ -328,6 +328,7 @@ namespace RTSokak.Resources
 
             // Сохраняем в словарь
             spawnedResources[gridPos] = resource;
+            return true;
         }
 
         /// <summary>

@@ -48,6 +48,7 @@ namespace RTSokak.Resources
         private Vector3 initialLocalScale;
         private bool hasSavedInitialTransform;
         private Coroutine hitShakeRoutine;
+        private BoxCollider cachedBoxCollider;
 
         public bool IsClaimed => claimedBy != null;
         public bool IsAvailable => !IsHarvested && claimedBy == null;
@@ -90,6 +91,7 @@ namespace RTSokak.Resources
             BoxCollider col = GetComponent<BoxCollider>();
             if (col == null)
                 col = gameObject.AddComponent<BoxCollider>();
+            cachedBoxCollider = col;
 
             // Do NOT keep active NavMeshObstacle carving on static resources.
             // Thousands of carving obstacles corrupt Unity's tile carver and create invisible walls.
@@ -290,9 +292,10 @@ namespace RTSokak.Resources
 
         public Vector3 GetCenterPosition()
         {
-            BoxCollider col = GetComponent<BoxCollider>();
-            if (col != null)
-                return transform.TransformPoint(col.center);
+            if (cachedBoxCollider == null)
+                cachedBoxCollider = GetComponent<BoxCollider>();
+            if (cachedBoxCollider != null)
+                return transform.TransformPoint(cachedBoxCollider.center);
             return transform.position;
         }
 
