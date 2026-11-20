@@ -114,7 +114,56 @@ namespace RTSokak.UI
 
             WireButtons();
             StylePanels();
+            EnsurePersistentBackdrop();
             ShowMainPanel();
+        }
+
+        void EnsurePersistentBackdrop()
+        {
+            UnityEngine.Camera cam = UnityEngine.Camera.main;
+            if (cam != null)
+            {
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.05f, 0.07f, 0.09f, 1f);
+            }
+
+            Transform existing = transform.Find("MenuPersistentBackdrop");
+            if (existing == null)
+            {
+                GameObject backdrop = new GameObject("MenuPersistentBackdrop", typeof(RectTransform), typeof(Image));
+                backdrop.transform.SetParent(transform, false);
+                RectTransform rt = backdrop.GetComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+
+                Image img = backdrop.GetComponent<Image>();
+                img.color = new Color(0.05f, 0.07f, 0.09f, 1f);
+                img.raycastTarget = false;
+
+                backdrop.transform.SetAsFirstSibling();
+            }
+            else
+            {
+                existing.SetAsFirstSibling();
+            }
+
+            GameObject[] fullPanels = { mainPanel, singlePlayerPanel, networkPanel, createWorldPanel, settingsPanel };
+            for (int i = 0; i < fullPanels.Length; i++)
+            {
+                if (fullPanels[i] == null) continue;
+                var img = fullPanels[i].GetComponent<Image>();
+                if (img != null)
+                    img.color = new Color(0f, 0f, 0f, 0f);
+            }
+
+            if (deleteConfirmPanel != null)
+            {
+                var delImg = deleteConfirmPanel.GetComponent<Image>();
+                if (delImg != null)
+                    delImg.color = UIThemePalette.OverlayDim;
+            }
         }
 
         void StylePanels()
@@ -129,9 +178,9 @@ namespace RTSokak.UI
                 if (p == null) continue;
                 var anim = p.GetComponent<UIPanelAnimator>();
                 if (anim == null) anim = p.AddComponent<UIPanelAnimator>();
-                anim.duration = 0.20f;
-                anim.startScale = 0.96f;
-                anim.slideOffset = new Vector2(0f, -14f);
+                anim.duration = 0.16f;
+                anim.startScale = 0.97f;
+                anim.slideOffset = new Vector2(0f, -10f);
             }
 
             if (deleteConfirmPanel != null)

@@ -199,12 +199,12 @@ namespace RTSokak.UI
             else if (isPressed)
             {
                 targetScale = pressedScale;
-                targetColor = Color.Lerp(baseColor, Color.black, 0.22f);
+                targetColor = Color.Lerp(baseColor, Color.black, 0.15f);
             }
             else if (isHovered)
             {
                 targetScale = hoverScale;
-                targetColor = Color.Lerp(baseColor, UIThemePalette.AccentEmerald, 0.16f) + new Color(0.06f, 0.06f, 0.06f, 0f);
+                targetColor = Color.Lerp(baseColor, Color.white, 0.12f);
             }
 
             float t = 1f - Mathf.Exp(-animSpeed * dt);
@@ -256,9 +256,9 @@ namespace RTSokak.UI
     [DisallowMultipleComponent]
     public class UIPanelAnimator : MonoBehaviour
     {
-        public float duration = 0.20f;
-        public float startScale = 0.94f;
-        public Vector2 slideOffset = new Vector2(0f, -14f);
+        public float duration = 0.16f;
+        public float startScale = 0.97f;
+        public Vector2 slideOffset = new Vector2(0f, -10f);
 
         private RectTransform rectTransform;
         private CanvasGroup canvasGroup;
