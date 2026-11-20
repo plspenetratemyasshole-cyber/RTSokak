@@ -55,8 +55,8 @@ namespace RTSokak.Resources
 
         [Header("Limits")]
         [Tooltip("Hard cap on total resources to protect network and NavMesh")]
-        [SerializeField] private int maxWoodResources = 2200;
-        [SerializeField] private int maxOreResources = 1300;
+        [SerializeField] private int maxWoodResources = 5500;
+        [SerializeField] private int maxOreResources = 2200;
 
         [SyncVar]
         private int worldSeed;

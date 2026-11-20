@@ -1179,9 +1179,9 @@ MonoBehaviour:
   maxOrthographicSize: 20
   enableMovementLimits: 1
   minX: -500
-  maxX: 400
+  maxX: 500
   minZ: -500
-  maxZ: 400
+  maxZ: 500
   rotationSpeed: 200
   rotationStep: 90
   reportInterval: 2
@@ -8525,14 +8525,14 @@ MonoBehaviour:
   syncInterval: 0
   config:
     worldSize: 950
-    forestCount: 80
-    minForestSize: 8
-    maxForestSize: 18
-    forestDensity: 0.5
-    oreDepositCount: 45
+    forestCount: 150
+    minForestSize: 7
+    maxForestSize: 13
+    forestDensity: 0.45
+    oreDepositCount: 95
     minOreSize: 5
-    maxOreSize: 12
-    oreDensity: 0.6
+    maxOreSize: 9
+    oreDensity: 0.55
     treePrefab: {fileID: 6735245371635207307, guid: 2a4f03eaacf61fc4f8a488e8ece3d54e, type: 3}
     treeYOffset: 1
     orePrefab: {fileID: 6717063854766966355, guid: 0cf9a3b9398912341bdebba8fd374c48, type: 3}

@@ -15,6 +15,7 @@ namespace RTSokak.UI
         [SerializeField] private Vector2 anchoredPos = new Vector2(-16f, -16f);
 
         private TextMeshProUGUI label;
+        private RectTransform cardRt;
         private float nextRefresh;
         private float fpsSmooth;
         private int lastFps;
@@ -57,19 +58,30 @@ namespace RTSokak.UI
             if (GetComponent<GraphicRaycaster>() == null)
                 gameObject.AddComponent<GraphicRaycaster>();
 
+            var cardGo = new GameObject("PerfCard");
+            cardGo.transform.SetParent(transform, false);
+            cardRt = cardGo.AddComponent<RectTransform>();
+            cardRt.anchorMin = new Vector2(1f, 1f);
+            cardRt.anchorMax = new Vector2(1f, 1f);
+            cardRt.pivot = new Vector2(1f, 1f);
+            cardRt.anchoredPosition = anchoredPos;
+            cardRt.sizeDelta = new Vector2(150f, 54f);
+
+            var cardImg = cardGo.AddComponent<Image>();
+            UIStyleHelper.ApplyRoundedCard(cardImg, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 10);
+
             var textGo = new GameObject("PerfLabel");
-            textGo.transform.SetParent(transform, false);
+            textGo.transform.SetParent(cardGo.transform, false);
             var rt = textGo.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(1f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = new Vector2(320f, 88f);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(10f, 6f);
+            rt.offsetMax = new Vector2(-10f, -6f);
 
             label = textGo.AddComponent<TextMeshProUGUI>();
             label.fontSize = fontSize;
-            label.alignment = TextAlignmentOptions.TopRight;
-            label.color = new Color(0.95f, 0.95f, 0.95f, 0.9f);
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = Color.white;
             label.raycastTarget = false;
             label.text = "FPS: --\nPing: --";
         }
@@ -99,14 +111,30 @@ namespace RTSokak.UI
             if (label == null)
                 EnsureUi();
 
-            string pingText = lastPingMs < 0 ? "--" : $"{lastPingMs} ms";
+            string fpsColor = lastFps >= 60 ? "#44E288" : (lastFps >= 30 ? "#F8DC46" : "#FF5252");
+            string fpsStr = $"<color={fpsColor}>{lastFps}</color>";
+
+            string pingStr;
+            if (lastPingMs < 0)
+            {
+                pingStr = "<color=#8899A6>--</color>";
+            }
+            else
+            {
+                string pingColor = lastPingMs <= 50 ? "#44E288" : (lastPingMs <= 120 ? "#F8DC46" : "#FF5252");
+                pingStr = $"<color={pingColor}>{lastPingMs} ms</color>";
+            }
+
             string warn = string.Empty;
             if (NetworkServer.active && Application.isEditor && !Application.isFocused)
                 warn = "\nEDITOR THROTTLED";
             else if (NetworkServer.active && Application.isEditor)
                 warn = "\nHost in Editor: Alt+Tab throttles";
 
-            label.text = $"FPS: {lastFps}\nPing: {pingText}{warn}";
+            if (cardRt != null)
+                cardRt.sizeDelta = new Vector2(string.IsNullOrEmpty(warn) ? 150f : 240f, string.IsNullOrEmpty(warn) ? 54f : 76f);
+
+            label.text = $"FPS: {fpsStr}\nPing: {pingStr}{warn}";
         }
     }
 }

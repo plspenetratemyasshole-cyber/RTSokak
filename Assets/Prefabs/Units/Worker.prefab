@@ -197,11 +197,11 @@ MonoBehaviour:
   startingMaxHealth: 100
   selectedOutlineColor: {r: 0.15, g: 1, b: 0.2, a: 1}
   enemyOutlineColor: {r: 1, g: 0.08, b: 0.08, a: 1}
-  moveSpeed: 7.5
+  moveSpeed: 70.5
   stoppingDistance: 2.5
   formationStoppingDistance: 0.12
   angularSpeed: 360
-  acceleration: 8
+  acceleration: 80
   outlineWidth: 2
   pathLineWidth: 0.3
   lineHeight: 0.1

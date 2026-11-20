@@ -113,7 +113,35 @@ namespace RTSokak.UI
                 serverEntryTemplate.SetActive(false);
 
             WireButtons();
+            StylePanels();
             ShowMainPanel();
+        }
+
+        void StylePanels()
+        {
+            UIStyleHelper.StyleAllButtonsIn(gameObject);
+            UIStyleHelper.StyleInputAndDropdowns(gameObject);
+
+            GameObject[] slidePanels = { mainPanel, singlePlayerPanel, networkPanel, createWorldPanel, settingsPanel };
+            for (int i = 0; i < slidePanels.Length; i++)
+            {
+                var p = slidePanels[i];
+                if (p == null) continue;
+                var anim = p.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = p.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.20f;
+                anim.startScale = 0.96f;
+                anim.slideOffset = new Vector2(0f, -14f);
+            }
+
+            if (deleteConfirmPanel != null)
+            {
+                var anim = deleteConfirmPanel.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = deleteConfirmPanel.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.18f;
+                anim.startScale = 0.88f;
+                anim.slideOffset = Vector2.zero;
+            }
         }
 
         void OnEnable()
@@ -243,6 +271,7 @@ namespace RTSokak.UI
 
         void RefreshWorldList()
         {
+            selectedWorldName = null;
             ClearSpawned(worldEntryObjects);
             IReadOnlyList<string> worlds = WorldSaveService.ListWorlds();
             if (emptyWorldsLabel != null)
@@ -259,18 +288,33 @@ namespace RTSokak.UI
                 if (entry != null)
                     worldEntryObjects.Add(entry);
             }
+
+            if (worldPlayButton != null)
+                worldPlayButton.interactable = !string.IsNullOrWhiteSpace(selectedWorldName);
+            if (worldDeleteButton != null)
+                worldDeleteButton.interactable = !string.IsNullOrWhiteSpace(selectedWorldName);
         }
 
         void HighlightWorldEntries(string selected)
         {
             for (int i = 0; i < worldEntryObjects.Count; i++)
             {
+                if (worldEntryObjects[i] == null) continue;
                 var img = worldEntryObjects[i].GetComponent<Image>();
                 var label = worldEntryObjects[i].GetComponentInChildren<TextMeshProUGUI>();
                 bool on = label != null && label.text == selected;
-                if (img != null)
-                    img.color = on ? worldEntrySelected : worldEntryNormal;
+                Color col = on ? worldEntrySelected : worldEntryNormal;
+                var juice = worldEntryObjects[i].GetComponent<UIButtonJuice>();
+                if (juice != null)
+                    juice.SetBaseColor(col);
+                else if (img != null)
+                    img.color = col;
             }
+
+            if (worldPlayButton != null)
+                worldPlayButton.interactable = !string.IsNullOrWhiteSpace(selectedWorldName);
+            if (worldDeleteButton != null)
+                worldDeleteButton.interactable = !string.IsNullOrWhiteSpace(selectedWorldName);
         }
 
         void OnPlayWorldClicked()
@@ -358,6 +402,7 @@ namespace RTSokak.UI
         void RebuildServerListUi()
         {
             ClearSpawned(serverEntryObjects);
+            publicServerKeys.Clear();
             int count = 0;
 
             foreach (var kv in discoveredServers)
@@ -623,6 +668,7 @@ namespace RTSokak.UI
             {
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(onClick);
+                UIStyleHelper.StyleButton(button, new Color(0.12f, 0.14f, 0.12f, 0.9f), compact: true);
             }
 
             return entry;

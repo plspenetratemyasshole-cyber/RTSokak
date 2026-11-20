@@ -44,7 +44,34 @@ namespace RTSokak.UI
         {
             WireButtons();
             EnsureSensitivityUi();
+            StylePauseUI();
             SetOpen(false);
+        }
+
+        void StylePauseUI()
+        {
+            GameObject[] panels = { mainPanel, saveSuccessPanel, exitConfirmPanel };
+            for (int i = 0; i < panels.Length; i++)
+            {
+                var p = panels[i];
+                if (p == null) continue;
+
+                var img = p.GetComponent<Image>();
+                if (img != null)
+                    UIStyleHelper.ApplyRoundedCard(img, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 16);
+
+                var anim = p.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = p.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.20f;
+                anim.startScale = 0.95f;
+                anim.slideOffset = new Vector2(0f, -12f);
+            }
+
+            if (pauseRoot != null)
+            {
+                UIStyleHelper.StyleAllButtonsIn(pauseRoot);
+                UIStyleHelper.StyleInputAndDropdowns(pauseRoot);
+            }
         }
 
         void WireButtons()
@@ -104,7 +131,17 @@ namespace RTSokak.UI
                 pauseRoot.SetActive(open);
 
             if (!open)
+            {
+                if (RTSPlayer.localPlayer != null &&
+                    RTSPlayer.localPlayer.Role == PlayerRole.UnitPlaying &&
+                    UnitPlayerController.Instance != null &&
+                    UnitPlayerController.Instance.IsActive)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
                 return;
+            }
 
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
@@ -125,6 +162,42 @@ namespace RTSokak.UI
             if (exitConfirmPanel != null) exitConfirmPanel.SetActive(false);
 
             RefreshSensitivitySection();
+            ReflowMainButtons();
+        }
+
+        void ReflowMainButtons()
+        {
+            Button[] buttons = { resumeButton, openToLanButton, saveButton, saveAndExitButton, exitButton };
+            float currentY = 85f;
+            float spacing = 54f;
+            float lastButtonY = currentY;
+            bool hasButton = false;
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                Button btn = buttons[i];
+                if (btn != null && btn.gameObject.activeSelf)
+                {
+                    RectTransform rt = btn.GetComponent<RectTransform>();
+                    if (rt != null)
+                    {
+                        rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, currentY);
+                    }
+                    lastButtonY = currentY;
+                    hasButton = true;
+                    currentY -= spacing;
+                }
+            }
+
+            if (sensitivitySection != null && sensitivitySection.activeSelf)
+            {
+                RectTransform srt = sensitivitySection.GetComponent<RectTransform>();
+                if (srt != null)
+                {
+                    float sensY = hasButton ? (lastButtonY - 66f) : (85f - 66f);
+                    srt.anchoredPosition = new Vector2(srt.anchoredPosition.x, sensY);
+                }
+            }
         }
 
         void EnsureSensitivityUi()
@@ -310,6 +383,7 @@ namespace RTSokak.UI
             lanAdvertised = true;
             if (openToLanButton != null)
                 openToLanButton.gameObject.SetActive(false);
+            ReflowMainButtons();
         }
 
         void OnSave()

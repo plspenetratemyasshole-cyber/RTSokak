@@ -82,12 +82,47 @@ namespace RTSokak.UI
         private IUnitTrainingQueue queueShownFor;
         private static Sprite queueWhiteSprite;
 
+        private float targetPanelAlpha;
+        private Vector2 basePanelPos;
+        private bool hasCachedBasePanelPos;
+        private RectTransform panelRectTransform;
+
         private void Awake()
         {
             Instance = this;
+
+            CanvasScaler scaler = GetComponentInParent<CanvasScaler>();
+            if (scaler == null)
+            {
+                Canvas parentCanvas = GetComponentInParent<Canvas>();
+                if (parentCanvas != null)
+                    scaler = parentCanvas.gameObject.AddComponent<CanvasScaler>();
+            }
+            if (scaler != null)
+            {
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.matchWidthOrHeight = 0.5f;
+            }
+
             EnsureSelectionManager();
             EnsureCanvasGroup();
-            SetPanelVisible(false);
+
+            targetPanelAlpha = 0f;
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+            if (panelRectTransform != null && hasCachedBasePanelPos)
+                panelRectTransform.anchoredPosition = new Vector2(basePanelPos.x, basePanelPos.y - 18f);
+            if (rootGraphic != null)
+                rootGraphic.enabled = false;
+            if (workerSection != null) workerSection.SetActive(false);
+            if (buildingSection != null) buildingSection.SetActive(false);
+            if (convertSection != null) convertSection.SetActive(false);
+            SetTrainQueueVisible(false);
         }
 
         private void Start()
@@ -185,7 +220,43 @@ namespace RTSokak.UI
                 DisableTooltipRaycasts(tooltipRoot.gameObject);
             }
 
+            StyleUI();
             Refresh();
+        }
+
+        private void StyleUI()
+        {
+            Image rootImg = (panelRoot != null ? panelRoot.GetComponent<Image>() : null) ?? GetComponent<Image>();
+            if (rootImg != null)
+                UIStyleHelper.ApplyRoundedCard(rootImg, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 14);
+
+            if (tooltipRoot != null)
+            {
+                var tooltipImg = tooltipRoot.GetComponent<Image>();
+                if (tooltipImg != null)
+                    UIStyleHelper.ApplyRoundedCard(tooltipImg, UIThemePalette.PanelCard, UIThemePalette.BorderSubtle, 8);
+
+                var anim = tooltipRoot.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = tooltipRoot.gameObject.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.12f;
+                anim.startScale = 0.92f;
+                anim.slideOffset = new Vector2(0f, -6f);
+            }
+
+            if (deleteConfirmPanel != null)
+            {
+                var confirmImg = deleteConfirmPanel.GetComponent<Image>();
+                if (confirmImg != null)
+                    UIStyleHelper.ApplyRoundedCard(confirmImg, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 12);
+
+                var anim = deleteConfirmPanel.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = deleteConfirmPanel.gameObject.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.12f;
+                anim.startScale = 0.92f;
+                anim.slideOffset = Vector2.zero;
+            }
+
+            UIStyleHelper.StyleAllButtonsIn(gameObject);
         }
 
         private static void DisableTooltipRaycasts(GameObject root)
@@ -247,35 +318,65 @@ namespace RTSokak.UI
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
             rootGraphic = GetComponent<Graphic>();
+
+            if (panelRectTransform == null)
+                panelRectTransform = (panelRoot != null ? panelRoot.GetComponent<RectTransform>() : null) ?? GetComponent<RectTransform>();
+
+            if (!hasCachedBasePanelPos && panelRectTransform != null)
+            {
+                basePanelPos = panelRectTransform.anchoredPosition;
+                hasCachedBasePanelPos = true;
+            }
         }
 
         private void SetPanelVisible(bool visible)
         {
-            // Никогда не выключаем gameObject со скриптом — только прячем визуал
+            targetPanelAlpha = visible ? 1f : 0f;
+
             if (canvasGroup != null)
             {
-                canvasGroup.alpha = visible ? 1f : 0f;
                 canvasGroup.interactable = visible;
                 canvasGroup.blocksRaycasts = visible;
             }
 
-            if (rootGraphic != null)
-                rootGraphic.enabled = visible;
-
-            // Секции — дочерние объекты, их можно toggle
-            if (!visible)
-            {
-                if (workerSection != null) workerSection.SetActive(false);
-                if (buildingSection != null) buildingSection.SetActive(false);
-                if (convertSection != null) convertSection.SetActive(false);
-                SetTrainQueueVisible(false);
-            }
+            if (visible && rootGraphic != null)
+                rootGraphic.enabled = true;
         }
 
         private void Update()
         {
             if (selectionManager == null)
                 EnsureSelectionManager();
+
+            if (canvasGroup != null)
+            {
+                float currentAlpha = canvasGroup.alpha;
+                if (Mathf.Abs(currentAlpha - targetPanelAlpha) > 0.001f)
+                {
+                    float dt = Time.unscaledDeltaTime;
+                    float t = 1f - Mathf.Exp(-14f * dt);
+                    currentAlpha = Mathf.Lerp(currentAlpha, targetPanelAlpha, t);
+                    if (Mathf.Abs(currentAlpha - targetPanelAlpha) < 0.002f)
+                        currentAlpha = targetPanelAlpha;
+
+                    canvasGroup.alpha = currentAlpha;
+
+                    if (panelRectTransform != null && hasCachedBasePanelPos)
+                    {
+                        float yOffset = Mathf.Lerp(-18f, 0f, currentAlpha);
+                        panelRectTransform.anchoredPosition = new Vector2(basePanelPos.x, basePanelPos.y + yOffset);
+                    }
+
+                    if (currentAlpha <= 0.005f && targetPanelAlpha == 0f)
+                    {
+                        if (rootGraphic != null) rootGraphic.enabled = false;
+                        if (workerSection != null) workerSection.SetActive(false);
+                        if (buildingSection != null) buildingSection.SetActive(false);
+                        if (convertSection != null) convertSection.SetActive(false);
+                        SetTrainQueueVisible(false);
+                    }
+                }
+            }
 
             if (pendingBuildType.HasValue)
                 UpdatePlacement();
@@ -303,11 +404,14 @@ namespace RTSokak.UI
             bool show = worker != null || building != null || convertRelevant;
             SetPanelVisible(show);
 
-            if (workerSection != null)
-                workerSection.SetActive(show && worker != null && building == null);
+            if (show)
+            {
+                if (workerSection != null)
+                    workerSection.SetActive(worker != null && building == null);
 
-            if (buildingSection != null)
-                buildingSection.SetActive(show && building != null);
+                if (buildingSection != null)
+                    buildingSection.SetActive(building != null);
+            }
 
             if (worker != null)
                 RefreshInventory(worker);
@@ -651,6 +755,7 @@ namespace RTSokak.UI
             trainWorkerLabel.fontSize = 14;
             trainWorkerLabel.color = Color.white;
             trainWorkerLabel.alignment = TextAlignmentOptions.Center;
+            trainWorkerLabel.raycastTarget = false;
 
             btnObj.SetActive(false);
         }
@@ -686,6 +791,7 @@ namespace RTSokak.UI
             trainWarriorLabel.fontSize = 14;
             trainWarriorLabel.color = Color.white;
             trainWarriorLabel.alignment = TextAlignmentOptions.Center;
+            trainWarriorLabel.raycastTarget = false;
 
             btnObj.SetActive(false);
         }
@@ -721,6 +827,7 @@ namespace RTSokak.UI
             trainArcherLabel.fontSize = 14;
             trainArcherLabel.color = Color.white;
             trainArcherLabel.alignment = TextAlignmentOptions.Center;
+            trainArcherLabel.raycastTarget = false;
 
             btnObj.SetActive(false);
         }
@@ -788,10 +895,9 @@ namespace RTSokak.UI
                 rt.sizeDelta = new Vector2(queueSlotSize, queueSlotSize);
                 rt.anchoredPosition = new Vector2(i * (queueSlotSize + queueSlotGap), 0f);
 
-                // Фон слота (тёмный)
+                // Фон слота (тёмный rounded rect с border)
                 Image bg = slot.AddComponent<Image>();
-                bg.sprite = GetQueueWhiteSprite();
-                bg.color = new Color(0.12f, 0.14f, 0.16f, 0.95f);
+                UIStyleHelper.ApplyRoundedCard(bg, UIThemePalette.PanelCard, UIThemePalette.BorderSubtle, 8);
 
                 // Вертикальный progress fill снизу вверх
                 GameObject fillObj = new GameObject("Fill");
@@ -802,12 +908,12 @@ namespace RTSokak.UI
                 fillRt.offsetMin = Vector2.zero;
                 fillRt.offsetMax = Vector2.zero;
                 Image fill = fillObj.AddComponent<Image>();
-                fill.sprite = GetQueueWhiteSprite();
+                fill.sprite = UIThemeSprites.GetRoundedRect(8);
                 fill.type = Image.Type.Filled;
                 fill.fillMethod = Image.FillMethod.Vertical;
                 fill.fillOrigin = (int)Image.OriginVertical.Bottom;
                 fill.fillAmount = Mathf.Clamp01(prod.GetSlotProgress(i));
-                fill.color = new Color(0.2f, 0.75f, 0.35f, 0.95f);
+                fill.color = new Color(0.18f, 0.65f, 0.35f, 0.92f);
                 fill.raycastTarget = false;
 
                 Button btn = slot.AddComponent<Button>();
@@ -817,6 +923,11 @@ namespace RTSokak.UI
                     if (subscribedProduction != null)
                         subscribedProduction.RequestCancelSlot(captured);
                 });
+                btn.transition = Selectable.Transition.None;
+
+                var juice = slot.AddComponent<UIButtonJuice>();
+                juice.SetBaseColor(UIThemePalette.PanelCard);
+                juice.HoverScale = 1.05f;
 
                 GameObject textObj = new GameObject("Percent");
                 textObj.transform.SetParent(slot.transform, false);
@@ -1105,6 +1216,7 @@ namespace RTSokak.UI
             tmp.fontSize = 14;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
         }
 
         private void EnsureWarehouseButton()
@@ -1155,6 +1267,7 @@ namespace RTSokak.UI
             tmp.fontSize = 14;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
             return button;
         }
 
@@ -1196,6 +1309,7 @@ namespace RTSokak.UI
             tmp.fontSize = 15;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
+            tmp.raycastTarget = false;
         }
 
         private void OnDeleteClicked()

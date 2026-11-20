@@ -210,11 +210,7 @@ namespace RTSokak.UI
                     borderImage = gameObject.AddComponent<Image>();
             }
 
-            // Без спрайта Image рисует белый квад — даём 1x1 и тёмный цвет
-            if (borderImage.sprite == null)
-                borderImage.sprite = GetWhiteSprite();
-            borderImage.type = Image.Type.Simple;
-            borderImage.color = borderColor;
+            UIStyleHelper.ApplyRoundedCard(borderImage, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 10);
             borderImage.raycastTarget = false;
 
             if (mapImage == null)

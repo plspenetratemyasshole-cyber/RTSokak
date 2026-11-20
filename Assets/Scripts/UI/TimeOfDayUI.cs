@@ -15,6 +15,8 @@ namespace RTSokak.UI
         [Header("Settings")]
         [SerializeField] private bool show24HourFormat = true;
         [SerializeField] private string timeFormat = "HH:mm";
+
+        private int lastTotalMinutes = -1;
         
         private void Start()
         {
@@ -38,6 +40,10 @@ namespace RTSokak.UI
             {
                 float timeOfDay = dayNightCycle.GetTimeOfDay();
                 int totalMinutes = Mathf.FloorToInt(timeOfDay * 24f * 60f);
+                if (totalMinutes == lastTotalMinutes)
+                    return;
+
+                lastTotalMinutes = totalMinutes;
                 int hours = totalMinutes / 60;
                 int minutes = totalMinutes % 60;
                 

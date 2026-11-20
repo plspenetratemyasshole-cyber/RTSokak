@@ -308,7 +308,7 @@ namespace RTSokak.UI
                 rootCanvasObj.transform,
                 "CheatToggleButton",
                 "CHEATS [F1] ▼",
-                new Vector2(-15f, -15f),
+                new Vector2(-15f, -72f),
                 new Vector2(130f, 32f),
                 new Vector2(1f, 1f),
                 new Vector2(1f, 1f),
@@ -327,11 +327,17 @@ namespace RTSokak.UI
             panelRt.anchorMin = new Vector2(1f, 1f);
             panelRt.anchorMax = new Vector2(1f, 1f);
             panelRt.pivot = new Vector2(1f, 1f);
-            panelRt.anchoredPosition = new Vector2(-15f, -52f);
+            panelRt.anchoredPosition = new Vector2(-15f, -110f);
             panelRt.sizeDelta = new Vector2(panelWidth, panelHeight);
 
             Image panelBg = mainPanel.GetComponent<Image>();
-            panelBg.color = new Color(0.09f, 0.11f, 0.15f, 0.94f);
+            UIStyleHelper.ApplyRoundedCard(panelBg, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 12);
+
+            var anim = mainPanel.GetComponent<UIPanelAnimator>();
+            if (anim == null) anim = mainPanel.AddComponent<UIPanelAnimator>();
+            anim.duration = 0.18f;
+            anim.startScale = 0.95f;
+            anim.slideOffset = new Vector2(0f, -10f);
 
             // Title
             CreateLabel(mainPanel.transform, "Title", "MAYOR CHEAT PANEL", new Vector2(10f, -8f), new Vector2(panelWidth - 20f, 22f), 13, FontStyles.Bold, new Color(1f, 0.82f, 0.25f, 1f), TextAlignmentOptions.Center);
@@ -418,18 +424,8 @@ namespace RTSokak.UI
             rt.sizeDelta = size;
 
             Image img = btnObj.GetComponent<Image>();
-            img.color = bgColor;
-
             Button btn = btnObj.GetComponent<Button>();
             btn.targetGraphic = img;
-
-            ColorBlock cb = btn.colors;
-            cb.normalColor = bgColor;
-            cb.highlightedColor = Color.Lerp(bgColor, Color.white, 0.25f);
-            cb.pressedColor = Color.Lerp(bgColor, Color.black, 0.25f);
-            cb.selectedColor = bgColor;
-            btn.colors = cb;
-
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             GameObject textObj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -450,6 +446,8 @@ namespace RTSokak.UI
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.raycastTarget = false;
+
+            UIStyleHelper.StyleButton(btn, bgColor, compact: true);
 
             return btnObj;
         }

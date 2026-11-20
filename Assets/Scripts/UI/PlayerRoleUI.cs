@@ -63,6 +63,19 @@ namespace RTSokak.UI
             MakeOverlayPassThrough(mayorPlacePanel);
             MakeOverlayPassThrough(unitWaitPanel);
 
+            UIStyleHelper.StyleAllButtonsIn(gameObject);
+            GameObject[] panels = { choosePanel, mayorPlacePanel, unitWaitPanel };
+            for (int i = 0; i < panels.Length; i++)
+            {
+                var p = panels[i];
+                if (p == null) continue;
+                var anim = p.GetComponent<UIPanelAnimator>();
+                if (anim == null) anim = p.AddComponent<UIPanelAnimator>();
+                anim.duration = 0.20f;
+                anim.startScale = 0.95f;
+                anim.slideOffset = new Vector2(0f, -10f);
+            }
+
             HideAll();
         }
 

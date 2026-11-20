@@ -1,5 +1,6 @@
 using Mirror;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using RTSokak.Network;
 
@@ -21,13 +22,42 @@ namespace RTSokak.UI
         private RTSPlayer trackedPlayer;
         private float nextFindPlayerTime;
 
+        private UIValuePunch woodPunch;
+        private UIValuePunch orePunch;
+        private UIValuePunch foodPunch;
+        private UIValuePunch popPunch;
+
+        private static readonly Color SpendColor = new Color(1f, 0.42f, 0.42f, 1f);
+        private static readonly Color WoodGainColor = new Color(0.91f, 0.66f, 0.35f, 1f);
+        private static readonly Color OreGainColor = new Color(0.61f, 0.72f, 0.85f, 1f);
+        private static readonly Color FoodGainColor = new Color(0.55f, 0.88f, 0.42f, 1f);
+        private static readonly Color PopGainColor = new Color(0.24f, 0.86f, 0.50f, 1f);
+
         private void Start()
         {
             if (panel != null)
+            {
                 panel.SetActive(true);
+                var img = panel.GetComponent<Image>();
+                if (img != null)
+                    UIStyleHelper.ApplyRoundedCard(img, UIThemePalette.PanelDark, UIThemePalette.BorderSubtle, 12);
+            }
 
+            EnsurePunchComponents();
             UpdateResourceDisplay(0, 0, 0, 0, 0);
             RefreshTrackedPlayer();
+        }
+
+        private void EnsurePunchComponents()
+        {
+            if (woodText != null && woodPunch == null)
+                woodPunch = woodText.GetComponent<UIValuePunch>() ?? woodText.gameObject.AddComponent<UIValuePunch>();
+            if (oreText != null && orePunch == null)
+                orePunch = oreText.GetComponent<UIValuePunch>() ?? oreText.gameObject.AddComponent<UIValuePunch>();
+            if (foodText != null && foodPunch == null)
+                foodPunch = foodText.GetComponent<UIValuePunch>() ?? foodText.gameObject.AddComponent<UIValuePunch>();
+            if (populationText != null && popPunch == null)
+                popPunch = populationText.GetComponent<UIValuePunch>() ?? populationText.gameObject.AddComponent<UIValuePunch>();
         }
 
         private void Update()
@@ -142,12 +172,44 @@ namespace RTSokak.UI
             return fallbackMayor;
         }
 
+        private int lastWood = -1;
+        private int lastOre = -1;
+        private int lastFood = -1;
+        private int lastPop = -1;
+        private int lastMaxPop = -1;
+
         private void UpdateResourceDisplay(int wood, int ore, int food, int pop, int maxPop)
         {
-            if (woodText != null) woodText.text = $"Wood: {wood}";
-            if (oreText != null) oreText.text = $"Ore: {ore}";
-            if (foodText != null) foodText.text = $"Food: {food}";
-            if (populationText != null) populationText.text = $"Pop: {pop}/{maxPop}";
+            if (wood == lastWood && ore == lastOre && food == lastFood && pop == lastPop && maxPop == lastMaxPop)
+                return;
+
+            EnsurePunchComponents();
+
+            if (lastWood >= 0)
+            {
+                if (wood > lastWood) woodPunch?.Punch(WoodGainColor);
+                else if (wood < lastWood) woodPunch?.Punch(SpendColor);
+
+                if (ore > lastOre) orePunch?.Punch(OreGainColor);
+                else if (ore < lastOre) orePunch?.Punch(SpendColor);
+
+                if (food > lastFood) foodPunch?.Punch(FoodGainColor);
+                else if (food < lastFood) foodPunch?.Punch(SpendColor);
+
+                if (pop > lastPop) popPunch?.Punch(PopGainColor);
+                else if (pop < lastPop) popPunch?.Punch(SpendColor);
+            }
+
+            lastWood = wood;
+            lastOre = ore;
+            lastFood = food;
+            lastPop = pop;
+            lastMaxPop = maxPop;
+
+            if (woodText != null) woodText.text = $"<color=#E8A85A>Wood:</color> {wood}";
+            if (oreText != null) oreText.text = $"<color=#9BB8D9>Ore:</color> {ore}";
+            if (foodText != null) foodText.text = $"<color=#8CE06C>Food:</color> {food}";
+            if (populationText != null) populationText.text = $"<color=#EAEFF5>Pop:</color> {pop}/{maxPop}";
         }
 
         private void OnDestroy()
