@@ -216,8 +216,8 @@ MonoBehaviour:
   toolEndAngle: 0
   autoAttackSearchRange: 80
   chaseRetargetInterval: 0.12
-  knockbackForce: 5
-  knockbackUpForce: 5
+  knockbackForce: 3.2
+  knockbackUpForce: 1.6
   knockbackMinDuration: 0.45
   knockbackMaxDuration: 1.15
   knockbackGroundSnapHeight: 0.35
@@ -259,7 +259,7 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   healthBarSize: {x: 2, y: 0.3}
   healthBarReferenceHp: 100
-  netPositionSyncInterval: 0.15
+  netPositionSyncInterval: 0.08
   softCorrectDistance: 0.6
   hardCorrectDistance: 2.25
   softCorrectSpeed: 10
@@ -272,7 +272,7 @@ MonoBehaviour:
   unitPlayerMoveSpeed: 3.5
   unitPlayerSprintMultiplier: 1.65
   unitPlayerJumpForce: 6.5
-  unitPlayerFogRadius: 10
+  unitPlayerFogRadius: 48
   farmInteractDistance: 0.9
   farmStuckTimeout: 5
   woodHarvestDuration: 1

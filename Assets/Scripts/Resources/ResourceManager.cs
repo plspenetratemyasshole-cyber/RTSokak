@@ -53,6 +53,10 @@ namespace RTSokak.Resources
         [Tooltip("Префаб ParticleSystem для руды (Looping = false)")]
         [SerializeField] private GameObject oreHarvestParticles;
 
+        [Header("Limits")]
+        [Tooltip("Hard cap on total resources to protect network and NavMesh")]
+        [SerializeField] private int maxTotalResources = 3500;
+
         [SyncVar]
         private int worldSeed;
 
@@ -200,10 +204,19 @@ namespace RTSokak.Resources
                 // Спавним ресурсы
                 foreach (Vector2Int pos in positions)
                 {
+                    if (spawnedResources.Count >= maxTotalResources)
+                        break;
+
                     if (!spawnedResources.ContainsKey(pos))
                     {
                         SpawnResource(type, pos);
                     }
+                }
+
+                if (spawnedResources.Count >= maxTotalResources)
+                {
+                    UnityEngine.Debug.LogWarning($"[ResourceManager] Reached maxTotalResources cap ({maxTotalResources}). Halting generation.");
+                    break;
                 }
             }
         }
@@ -256,6 +269,9 @@ namespace RTSokak.Resources
         [Server]
         private void SpawnResource(ResourceType type, Vector2Int gridPos)
         {
+            if (spawnedResources.Count >= maxTotalResources)
+                return;
+
             // ПРОВЕРКА: Есть ли уже ресурс в этой клетке?
             if (spawnedResources.TryGetValue(gridPos, out Resource existingResource))
             {

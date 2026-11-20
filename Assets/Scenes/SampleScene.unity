@@ -8525,14 +8525,14 @@ MonoBehaviour:
   syncInterval: 0
   config:
     worldSize: 950
-    forestCount: 280
+    forestCount: 80
     minForestSize: 8
-    maxForestSize: 50
-    forestDensity: 0.1
-    oreDepositCount: 190
+    maxForestSize: 18
+    forestDensity: 0.5
+    oreDepositCount: 45
     minOreSize: 5
-    maxOreSize: 20
-    oreDensity: 0.7
+    maxOreSize: 12
+    oreDensity: 0.6
     treePrefab: {fileID: 6735245371635207307, guid: 2a4f03eaacf61fc4f8a488e8ece3d54e, type: 3}
     treeYOffset: 1
     orePrefab: {fileID: 6717063854766966355, guid: 0cf9a3b9398912341bdebba8fd374c48, type: 3}

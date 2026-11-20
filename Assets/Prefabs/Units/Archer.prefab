@@ -473,8 +473,8 @@ MonoBehaviour:
   toolEndAngle: 0
   autoAttackSearchRange: 80
   chaseRetargetInterval: 0.12
-  knockbackForce: 2.5
-  knockbackUpForce: 1.35
+  knockbackForce: 3.2
+  knockbackUpForce: 1.6
   knockbackMinDuration: 0.45
   knockbackMaxDuration: 1.15
   knockbackGroundSnapHeight: 0.35
@@ -516,7 +516,7 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   healthBarSize: {x: 0.1, y: 0.015}
   healthBarReferenceHp: 100
-  netPositionSyncInterval: 0.1
+  netPositionSyncInterval: 0.08
   softCorrectDistance: 0.4
   hardCorrectDistance: 2.25
   softCorrectSpeed: 12

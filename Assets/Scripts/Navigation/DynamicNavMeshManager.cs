@@ -12,7 +12,7 @@ namespace RTSokak.Navigation
     public class DynamicNavMeshManager : MonoBehaviour
     {
         [Header("NavMesh Settings")]
-        [SerializeField] private Vector3 navMeshSize = new Vector3(200, 10, 200);
+        [SerializeField] private Vector3 navMeshSize = new Vector3(1000, 50, 1000);
         [SerializeField] private LayerMask walkableLayers;
         [SerializeField] private LayerMask obstacleLayers;
         

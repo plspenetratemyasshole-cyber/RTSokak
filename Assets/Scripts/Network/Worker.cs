@@ -224,7 +224,7 @@ namespace RTSokak.Network
                 nameplate = null;
             }
 
-            if (isServer)
+            if (isServer && NetworkServer.active)
             {
                 ReleaseCurrentResourceClaim();
                 LeaveConstruction();

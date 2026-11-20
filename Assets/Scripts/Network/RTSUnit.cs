@@ -492,23 +492,29 @@ namespace RTSokak.Network
             }
             else if (unitPlaying)
             {
-                // FPS: prediction всех AI-юнитов каждый кадр — дорого; прореживаем + дистанция
-                float fogR = UnitPlayerController.Instance != null
-                    ? UnitPlayerController.Instance.FogRadius
-                    : 48f;
-                Transform camT = UnitPlayerController.Instance != null &&
-                                 UnitPlayerController.Instance.FpsCamera != null
-                    ? UnitPlayerController.Instance.FpsCamera.transform
+                var upc = UnitPlayerController.Instance;
+                Transform camT = upc != null && upc.FpsCamera != null
+                    ? upc.FpsCamera.transform
                     : null;
                 if (camT != null)
                 {
-                    float sqr = (transform.position - camT.position).sqrMagnitude;
-                    if (sqr > fogR * fogR * 1.21f)
-                        return; // за туманом — не симулируем
+                    // Дистанция отсечения: если включен экранный туман — fogRadius, иначе unitCullDistance (не менее 60м)
+                    float cullDist = upc != null && upc.EnableUnitFog
+                        ? upc.FogRadius * 1.1f
+                        : Mathf.Max(60f, upc != null ? upc.UnitCullDistance : 60f);
+
+                    Vector3 camPos = camT.position;
+                    // Проверяем как текущую позицию, так и авторитетную серверную syncedNetPosition,
+                    // чтобы приближающийся к игроку юнит или юнит после knockback не застрял в отсечении.
+                    float sqrDist = Mathf.Min(
+                        (transform.position - camPos).sqrMagnitude,
+                        (syncedNetPosition - camPos).sqrMagnitude
+                    );
+                    if (sqrDist > cullDist * cullDist)
+                        return;
                 }
-                // ~20 Hz вместо 60
-                if ((netId + (uint)Time.frameCount) % 3 == 0)
-                    ClientUpdatePrediction();
+
+                ClientUpdatePrediction();
             }
             else
             {
@@ -1063,11 +1069,11 @@ namespace RTSokak.Network
             if (dist > effectiveRange)
             {
                 combatState = UnitCombatState.Chasing;
-                if (navAgent != null)
+                if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
                     navAgent.isStopped = false;
 
                 bool needRetarget = Time.time >= nextChaseRetargetTime;
-                if (navAgent != null && navAgent.enabled)
+                if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
                 {
                     needRetarget = needRetarget || !navAgent.hasPath || navAgent.remainingDistance < 0.35f ||
                                    HorizontalDistance(navAgent.destination, chaseDest) > 0.5f;
@@ -1084,7 +1090,7 @@ namespace RTSokak.Network
             }
 
             combatState = UnitCombatState.Attacking;
-            if (navAgent != null)
+            if (navAgent != null && navAgent.enabled && navAgent.isOnNavMesh)
                 navAgent.isStopped = true;
 
             FaceTarget(facePos);
@@ -1295,8 +1301,11 @@ namespace RTSokak.Network
             {
                 if (navAgent.enabled)
                 {
-                    navAgent.isStopped = true;
-                    navAgent.ResetPath();
+                    if (navAgent.isOnNavMesh)
+                    {
+                        navAgent.isStopped = true;
+                        navAgent.ResetPath();
+                    }
                     navAgent.enabled = false;
                 }
 
@@ -1316,12 +1325,28 @@ namespace RTSokak.Network
 
             clientSmoothVel = Vector3.zero;
 
-            if (!navAgent.enabled)
+            // Выход из knockback или неактивный NavMeshAgent
+            if (!navAgent.enabled || !navAgent.isOnNavMesh)
             {
-                navAgent.enabled = true;
-                if (!navAgent.isOnNavMesh &&
-                    NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 4f, NavMesh.AllAreas))
+                Vector3 samplePos = syncedNetPosition != Vector3.zero ? syncedNetPosition : transform.position;
+                if (NavMesh.SamplePosition(samplePos, out NavMeshHit hit, 6f, NavMesh.AllAreas))
+                {
+                    navAgent.enabled = true;
                     navAgent.Warp(hit.position);
+                }
+                else
+                {
+                    navAgent.enabled = false;
+                    // Если всё ещё не на NavMesh (например, в воздухе), плавно тянем к серверной позиции включая Y
+                    if (hasClientCorrectionTarget)
+                    {
+                        transform.position = Vector3.MoveTowards(
+                            transform.position,
+                            clientCorrectionTarget,
+                            softCorrectSpeed * Time.deltaTime);
+                    }
+                    return;
+                }
             }
 
             ApplyClientPositionCorrection();
@@ -1342,7 +1367,7 @@ namespace RTSokak.Network
                 {
                     moveTarget = attackId.transform.position;
                     NavMeshAgent enemyAgent = attackId.GetComponent<NavMeshAgent>();
-                    if (enemyAgent != null && enemyAgent.enabled && enemyAgent.velocity.sqrMagnitude > 0.25f)
+                    if (enemyAgent != null && enemyAgent.enabled && enemyAgent.isOnNavMesh && enemyAgent.velocity.sqrMagnitude > 0.25f)
                         moveTarget += enemyAgent.velocity * 0.12f;
                     moveTarget.y = 0f;
                 }
@@ -1357,18 +1382,22 @@ namespace RTSokak.Network
 
             if (syncedAgentStopped || !haveTarget)
             {
-                navAgent.isStopped = true;
+                if (navAgent.enabled && navAgent.isOnNavMesh)
+                    navAgent.isStopped = true;
                 return;
             }
 
-            navAgent.isStopped = false;
-            if (!navAgent.pathPending && Time.time >= nextClientPredictionRetargetTime)
+            if (navAgent.enabled && navAgent.isOnNavMesh)
             {
-                if (!navAgent.hasPath ||
-                    HorizontalDistance(navAgent.destination, moveTarget) > 0.4f)
+                navAgent.isStopped = false;
+                if (!navAgent.pathPending && Time.time >= nextClientPredictionRetargetTime)
                 {
-                    nextClientPredictionRetargetTime = Time.time + 0.15f;
-                    TrySetAgentDestination(moveTarget);
+                    if (!navAgent.hasPath ||
+                        HorizontalDistance(navAgent.destination, moveTarget) > 0.4f)
+                    {
+                        nextClientPredictionRetargetTime = Time.time + 0.15f;
+                        TrySetAgentDestination(moveTarget);
+                    }
                 }
             }
         }
@@ -1387,7 +1416,7 @@ namespace RTSokak.Network
                 if (NavMesh.SamplePosition(target, out NavMeshHit hit, 2f, NavMesh.AllAreas))
                     warp = hit.position;
 
-                if (navAgent.enabled)
+                if (navAgent.enabled && navAgent.isOnNavMesh)
                     navAgent.Warp(warp);
                 else
                     transform.position = warp;
@@ -1395,10 +1424,20 @@ namespace RTSokak.Network
                 return;
             }
 
-            if (err < softCorrectDistance)
-                return;
+            bool needsYCorrection = !navAgent.enabled || !navAgent.isOnNavMesh || Mathf.Abs(transform.position.y - target.y) > 0.25f;
 
-            bool standing = syncedAgentStopped || navAgent.isStopped || !navAgent.hasPath;
+            if (err < softCorrectDistance)
+            {
+                if (needsYCorrection)
+                {
+                    Vector3 pos = transform.position;
+                    pos.y = Mathf.MoveTowards(pos.y, target.y, softCorrectSpeed * Time.deltaTime);
+                    transform.position = pos;
+                }
+                return;
+            }
+
+            bool standing = syncedAgentStopped || (!navAgent.enabled || !navAgent.isOnNavMesh || navAgent.isStopped || !navAgent.hasPath);
 
             if (standing)
             {
@@ -1406,13 +1445,17 @@ namespace RTSokak.Network
                     transform.position, target, ref clientSmoothVel, 0.1f, softCorrectSpeed);
                 transform.position = next;
             }
-            else if (err > 0.45f)
+            else
             {
-                // Во время бега — мягкий blend вдоль горизонтали, без ломки пути агента
+                // Во время бега — мягкий blend вдоль горизонтали
                 float t = Mathf.Clamp01(softCorrectSpeed * 0.35f * Time.deltaTime);
                 Vector3 blended = transform.position;
                 blended.x = Mathf.Lerp(blended.x, target.x, t);
                 blended.z = Mathf.Lerp(blended.z, target.z, t);
+                if (needsYCorrection)
+                {
+                    blended.y = Mathf.Lerp(blended.y, target.y, t);
+                }
                 transform.position = blended;
             }
         }

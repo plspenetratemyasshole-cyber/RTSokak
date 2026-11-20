@@ -91,6 +91,16 @@ namespace RTSokak.Network
             kcp.NoDelay = true;
             kcp.Interval = 10;
             kcp.FastResend = 2;
+
+            // Ensure KcpTransport's internal config object is updated even if Awake() already ran
+            var configField = typeof(KcpTransport).GetField("config", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (configField?.GetValue(kcp) is KcpConfig cfg)
+            {
+                cfg.NoDelay = kcp.NoDelay;
+                cfg.Interval = kcp.Interval;
+                cfg.FastResend = kcp.FastResend;
+            }
+
             networkManager.sendRate = 30;
             networkManager.transport = kcp;
             Transport.active = kcp;

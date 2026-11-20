@@ -91,24 +91,14 @@ namespace RTSokak.Resources
             if (col == null)
                 col = gameObject.AddComponent<BoxCollider>();
 
-            // Block pathfinding: carve once when stationary (not every frame).
+            // Do NOT keep active NavMeshObstacle carving on static resources.
+            // Thousands of carving obstacles corrupt Unity's tile carver and create invisible walls.
             NavMeshObstacle obstacle = GetComponent<NavMeshObstacle>();
-            if (obstacle == null)
-                obstacle = gameObject.AddComponent<NavMeshObstacle>();
-
-            obstacle.enabled = true;
-            obstacle.shape = NavMeshObstacleShape.Box;
-            obstacle.center = col.center;
-            // Slightly larger than collider so agents don't clip the mesh
-            Vector3 size = col.size;
-            size.x = Mathf.Max(0.4f, size.x * 1.05f);
-            size.y = Mathf.Max(0.4f, size.y);
-            size.z = Mathf.Max(0.4f, size.z * 1.05f);
-            obstacle.size = size;
-            obstacle.carving = true;
-            obstacle.carveOnlyStationary = true;
-            obstacle.carvingMoveThreshold = 0.1f;
-            obstacle.carvingTimeToStationary = 0.05f;
+            if (obstacle != null)
+            {
+                obstacle.carving = false;
+                obstacle.enabled = false;
+            }
 
             // Keep default shadow casting (resources should cast shadows)
             var renderers = GetComponentsInChildren<Renderer>(true);

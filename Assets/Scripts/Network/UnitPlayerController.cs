@@ -142,6 +142,7 @@ namespace RTSokak.Network
         public float CurrentYaw => yaw;
         public UnityEngine.Camera FpsCamera => fpsCamera;
         public float FogRadius => cachedFogRadius;
+        public bool EnableUnitFog => enableUnitFog;
 
         public bool EnableDistanceCulling => enableDistanceCulling;
         public float ResourceCullDistance
